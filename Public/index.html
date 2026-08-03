@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Pemadaman INALUM</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <link rel="icon" type="image/png" sizes="32x32" href="/logo-inalum-dashboard.png">
+    <link rel="apple-touch-icon" href="/logo-inalum-dashboard.png">
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#F8FAFC',
+                        'background-soft': '#F1F5F9',
+                        foreground: '#0F172A',
+                        muted: '#64748B',
+                        border: '#E2E8F0',
+                        inalum: {
+                            blue: '#0A457F',
+                            bluehover: '#083663',
+                            green: '#009A44',
+                            red: '#E31B23'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Satoshi', 'Inter', '-apple-system', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        '4xl': '2rem',
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body { -webkit-font-smoothing: antialiased; }
+        .grain-overlay {
+            position: fixed; inset: 0; z-index: 60; pointer-events: none;
+            opacity: 0.025; mix-blend-mode: multiply;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 999px; }
+        a:focus-visible, button:focus-visible, input:focus-visible {
+            outline: 2px solid #0A457F; outline-offset: 2px;
+        }
+        .hero-halftone {
+            background-image: radial-gradient(circle, rgba(248, 250, 252, 0.5) 1px, transparent 1px);
+            background-size: 5px 5px;
+        }
+        @keyframes blink-cursor {
+            0%, 45% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        .hero-cursor { animation: blink-cursor 1s step-end infinite; }
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up-row { animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+        /* Smooth Mobile Drawer Transition */
+        #mobileDrawer { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #mobileDrawer.open { transform: translateX(0); }
+
+        /* --- FITUR CETAK PDF TEMPLATE RESMI --- */
+        @media print {
+            @page { size: A4; margin: 1.5cm; }
+            html, body {
+                background-color: white !important;
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+                margin: 0; padding: 0;
+            }
+            /* SEMBUNYIKAN SEMUA UI WEBSITE SAAT DICETAK */
+            aside, header, #drawerOverlay, #mobileDrawer, section[id^="view-"], #detailModal, #alertNotification {
+                display: none !important;
+            }
+            /* TAMPILKAN HANYA TEMPLATE KERTAS KERJA */
+            #printTemplateContainer {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                z-index: 99999;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-background text-foreground font-sans flex h-screen overflow-hidden">
+
+    <svg class="grain-overlay" aria-hidden="true">
+        <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
+        <rect width="100%" height="100%" filter="url(#grain)" />
+    </svg>
+
+    <aside class="w-64 bg-inalum-blue text-white flex-col hidden lg:flex shrink-0">
+        <div class="h-16 flex items-center px-6 border-b border-white/10 gap-3">
+            <img src="/logo-inalum-dashboard.png" alt="INALUM" class="h-8 w-auto">
+            <h1 class="text-xs font-medium tracking-[0.2em] uppercase leading-tight">
+                Blackout<br />Request
+            </h1>
+        </div>
+        <nav class="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
+            <button onclick="showView('overview')" id="nav-overview" class="nav-btn w-full text-left block px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white">Dashboard Overview</button>
+            <button onclick="showView('form')" id="nav-form" class="nav-btn w-full text-left block px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white">Buat Permohonan</button>
+            <button onclick="showView('history')" id="nav-history" class="nav-btn w-full text-left block px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white">Histori Pengajuan</button>
+            <button onclick="showView('approval')" id="nav-approval" class="nav-btn w-full text-left hidden px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white">Validasi &amp; Approval</button>
+        </nav>
+        <div class="p-4 border-t border-white/10">
+            <button id="logoutBtn" class="w-full border border-white/20 text-white py-3 md:py-2.5 rounded-full transition-colors text-xs uppercase tracking-[0.15em] font-medium hover:bg-white hover:text-inalum-blue">Keluar (Logout)</button>
+        </div>
+    </aside>
+
+    <div id="drawerOverlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0" onclick="toggleMobileMenu()"></div>
+
+    <aside id="mobileDrawer" class="fixed inset-y-0 left-0 w-3/4 max-w-sm bg-inalum-blue text-white flex flex-col z-50 transform -translate-x-full lg:hidden">
+        <div class="h-16 flex items-center justify-between px-6 border-b border-white/10">
+            <div class="flex items-center gap-3">
+                <img src="/logo-inalum-dashboard.png" alt="INALUM" class="h-8 w-auto">
+                <h1 class="text-xs font-medium tracking-[0.2em] uppercase leading-tight">Menu Navigasi</h1>
+            </div>
+            <button onclick="toggleMobileMenu()" class="text-white/50 hover:text-white p-2 -mr-2 text-xl">&times;</button>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            <button onclick="showView('overview'); toggleMobileMenu()" id="nav-overview-mobile" class="nav-btn w-full text-left block px-4 py-3 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50">Dashboard Overview</button>
+            <button onclick="showView('form'); toggleMobileMenu()" id="nav-form-mobile" class="nav-btn w-full text-left block px-4 py-3 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50">Buat Permohonan</button>
+            <button onclick="showView('history'); toggleMobileMenu()" id="nav-history-mobile" class="nav-btn w-full text-left block px-4 py-3 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50">Histori Pengajuan</button>
+            <button onclick="showView('approval'); toggleMobileMenu()" id="nav-approval-mobile" class="nav-btn w-full text-left hidden px-4 py-3 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50">Validasi &amp; Approval</button>
+        </nav>
+        <div class="p-6 border-t border-white/10">
+            <button id="logoutBtnMobile" class="w-full border border-white/20 text-white py-3 rounded-full transition-colors text-xs uppercase tracking-[0.15em] font-medium hover:bg-white hover:text-inalum-blue">Keluar (Logout)</button>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden w-full">
+
+        <header class="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 md:px-6 z-10 shrink-0">
+            <button onclick="toggleMobileMenu()" class="lg:hidden p-2 -ml-2 text-foreground focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+
+            <div class="flex-1 hidden md:flex items-center justify-center ml-14 ">
+                <img src="/logo-inalum-login.png" 
+                    alt="INALUM" 
+                    class="h-10 md:h-12 w-auto opacity-90 hover:opacity-100 transition-opacity translate-x-10">
+            </div>
+
+            <div class="flex items-center gap-3 ml-auto">
+                <span class="text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted text-right" id="userGreeting">Loading...</span>
+                <div class="w-8 h-8 md:w-9 md:h-9 bg-inalum-blue rounded-full flex items-center justify-center text-white font-medium text-sm shrink-0" id="avatarLetter">U</div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-6 lg:p-10">
+            <div id="alertNotification" class="max-w-5xl mx-auto hidden mb-6 p-4 rounded-xl text-sm text-center font-medium border"></div>
+
+            <section id="view-overview" class="max-w-5xl mx-auto space-y-6 hidden w-full">
+                <div class="relative overflow-hidden rounded-3xl bg-inalum-blue text-white min-h-[280px] md:min-h-[380px] flex flex-col justify-between p-6 md:p-10 lg:p-12 w-full">
+                    <img src="https://images.unsplash.com/photo-1693013112835-5f3128bb555f?fm=jpg&q=60&w=1600&auto=format&fit=crop" alt="" class="absolute inset-0 h-full w-full object-cover opacity-40 grayscale mix-blend-luminosity" />
+                    <div class="hero-halftone absolute inset-0"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-inalum-blue via-inalum-blue/70 to-inalum-blue/30"></div>
+
+                    <div class="relative z-10 flex items-start justify-between">
+                        <span class="inline-flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-[0.2em] text-white/100">
+                            <span class="h-1.5 w-1.5 rounded-full bg-inalum-green animate-pulse"></span>Sistem Aktif
+                        </span>
+                        <span id="heroClock" class="text-[10px] md:text-[11px] uppercase tracking-[0.2em] text-white/100 text-right max-w-[50%]"></span>
+                    </div>
+
+                    <div class="relative z-10 mt-10 md:mt-0">
+                        <span class="block text-[10px] md:text-xs uppercase tracking-[0.2em] text-white/60 mb-2 md:mb-3" id="heroGreeting">Selamat Datang</span>
+                        <h2 class="text-3xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.1]">
+                            <span id="heroTypedText"></span><span class="hero-cursor inline-block w-[2px] md:w-[3px] h-[0.85em] bg-white align-middle ml-1"></span>
+                        </h2>
+                        <p class="mt-3 md:mt-4 max-w-md text-xs md:text-sm text-white/70">Pantau, ajukan, dan validasi jadwal pemadaman dari satu tempat.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <p class="text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2">Total Pengajuan</p>
+                        <p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-total" data-value="0">0</p>
+                    </div>
+                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <p class="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2"><span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>Menunggu</p>
+                        <p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-pending" data-value="0">0</p>
+                    </div>
+                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <p class="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-green shrink-0"></span>Disetujui</p>
+                        <p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-approved" data-value="0">0</p>
+                    </div>
+                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <p class="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-red shrink-0"></span>Ditolak</p>
+                        <p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-rejected" data-value="0">0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-border overflow-hidden w-full">
+                    <div class="flex items-center justify-between p-4 md:p-6 border-b border-border">
+                        <h3 class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Aktivitas Terbaru</h3>
+                        <button onclick="showView('history')" class="text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-inalum-blue font-bold hover:underline p-2 -mr-2">Lihat Semua &rarr;</button>
+                    </div>
+                    <div id="recentActivityList" class="divide-y divide-border">
+                        <p class="p-6 text-sm text-muted italic text-center md:text-left">Memuat aktivitas...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-form" class="max-w-5xl mx-auto hidden w-full">
+                <div class="bg-white p-5 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl border border-border">
+                    <div class="mb-6 md:mb-8 border-b border-border pb-4 md:pb-6">
+                        <span class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Form Baru</span>
+                        <h2 class="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight mt-1 md:mt-2 text-inalum-blue">Permohonan Jadwal Pekerjaan</h2>
+                    </div>
+                    <form id="mainForm" onsubmit="submitForm(event)">
+                        <div class="mb-8 md:mb-10 bg-background-soft p-5 md:p-6 rounded-2xl border border-border">
+                            <h3 class="text-[10px] md:text-xs font-medium text-inalum-blue mb-4 md:mb-5 uppercase tracking-[0.2em] border-b border-border pb-2 md:pb-3">Informasi Pemohon</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                <div><label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Departemen Pemohon</label><input type="text" id="form-dept" required class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                <div><label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Dipersiapkan Oleh (Nama)</label><input type="text" id="form-preby" required class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                            </div>
+                        </div>
+
+                        <div id="outageRequestContainer" class="space-y-8 md:space-y-10 mb-8 md:mb-10">
+                            <div class="outage-block border border-border rounded-2xl p-5 md:p-8 bg-white relative mt-4 md:mt-0" data-outage="1">
+                                <div class="absolute -top-3 left-4 md:left-6 bg-inalum-blue text-white text-[9px] md:text-[10px] font-medium px-3 py-1 rounded-full uppercase tracking-[0.2em] outage-label shadow-sm">Pemadaman ke-1</div>
+                                <button type="button" class="remove-outage-btn hidden absolute top-4 right-4 md:top-8 md:right-8 text-inalum-red font-bold text-[10px] md:text-xs uppercase tracking-[0.15em] hover:underline p-2 bg-background-soft rounded-lg md:bg-transparent md:p-0">Hapus</button>
+
+                                <div class="mb-5 md:mb-6 mt-4 md:mt-2"><label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Jenis Pemadaman</label><input type="text" name="jenis_pemadaman" required class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+
+                                <div class="bg-background-soft p-4 md:p-5 rounded-xl border border-border mb-5 md:mb-6">
+                                    <h3 class="text-[10px] md:text-xs font-medium text-inalum-blue mb-3 md:mb-4 uppercase tracking-[0.2em]">Area Pemadaman</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                                        <div><label class="block text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-muted mb-1 md:mb-1.5">Dari</label><input type="text" name="area_dari" required class="w-full border border-border p-3 md:p-2 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                        <div><label class="block text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-muted mb-1 md:mb-1.5">Ke</label><input type="text" name="area_ke" required class="w-full border border-border p-3 md:p-2 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5 md:mb-6">
+                                    <div class="bg-background-soft p-4 md:p-5 rounded-xl border border-border">
+                                        <h3 class="flex items-center gap-2 text-[10px] md:text-[11px] font-medium text-inalum-blue mb-3 md:mb-4 uppercase tracking-[0.2em]"><span class="h-1.5 w-1.5 rounded-full bg-inalum-green"></span>Waktu Pengerjaan</h3>
+                                        <div class="space-y-3">
+                                            <div><label class="block text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-muted mb-1 md:mb-1.5">Dari</label><input type="datetime-local" name="waktu_kerja_mulai" required class="w-full border border-border p-3 md:p-2 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                            <div><label class="block text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-muted mb-1 md:mb-1.5">Ke</label><input type="datetime-local" name="waktu_kerja_selesai" required class="w-full border border-border p-3 md:p-2 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-background-soft p-4 md:p-5 rounded-xl border border-border">
+                                        <h3 class="flex items-center gap-2 text-[10px] md:text-[11px] font-medium text-inalum-blue mb-3 md:mb-4 uppercase tracking-[0.2em]"><span class="h-1.5 w-1.5 rounded-full bg-inalum-red"></span>Waktu Pemadaman</h3>
+                                        <div class="space-y-3">
+                                            <div><label class="block text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-muted mb-1 md:mb-1.5">Dari</label><input type="datetime-local" name="waktu_padam_mulai" required class="w-full border border-border p-3 md:p-2 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                            <div><label class="block text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-muted mb-1 md:mb-1.5">Ke</label><input type="datetime-local" name="waktu_padam_selesai" required class="w-full border border-border p-3 md:p-2 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-5 md:mb-6">
+                                    <label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2 md:mb-3">Daftar Pekerjaan</label>
+                                    <div class="task-list-container space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" class="task-input flex-1 border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors" placeholder="Rincian pekerjaan...">
+                                            <button type="button" class="add-task-btn shrink-0 bg-inalum-blue text-white w-10 h-10 md:w-9 md:h-9 rounded-full font-medium text-lg hover:bg-inalum-bluehover transition-colors shadow-sm">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-5 md:mb-6">
+                                    <div><label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Titik Pentahanan</label><input type="text" name="titik_pentahanan" class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                    <div><label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Komunikasi</label><input type="text" name="komunikasi" class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                    <div><label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Kepala Pelaksana</label><input type="text" name="kepala_pelaksana" class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                    <div><label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Keterangan Tambahan</label><input type="text" name="keterangan" class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                </div>
+
+                                <div class="bg-background-soft border border-border rounded-2xl p-4 md:p-6 mt-4">
+                                    <h3 class="text-[10px] md:text-xs font-medium mb-3 md:mb-4 uppercase tracking-[0.2em] text-inalum-blue">Lampiran SLD (Format PDF)</h3>
+                                    <input type="file" accept="application/pdf" class="sld-upload mb-4 block w-full text-xs text-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-inalum-blue file:text-white file:text-[10px] md:file:text-[11px] file:uppercase file:tracking-[0.15em] cursor-pointer"/>
+                                    
+                                    <div class="canvas-wrapper relative border border-border rounded-xl bg-white min-h-[150px] flex items-center justify-center overflow-auto cursor-crosshair">
+                                        <span class="canvas-placeholder text-muted text-[10px] md:text-xs p-4 text-center">Preview PDF akan muncul di sini...<br><span class="text-[9px] mt-1 block opacity-70">Gunakan file PDF 1 halaman</span></span>
+                                        <canvas class="sld-canvas hidden"></canvas>
+                                    </div>
+                                    
+                                    <div class="canvas-controls hidden mt-4 flex flex-wrap gap-2 md:gap-3">
+                                        <button type="button" class="tool-btn bg-inalum-blue text-white px-4 md:px-5 py-2 md:py-1.5 rounded-full text-[10px] md:text-[11px] uppercase tracking-[0.15em] font-medium transition-colors border border-inalum-blue shadow-sm" data-tool="highlight">Highlight</button>
+                                        <button type="button" class="tool-btn bg-white text-foreground px-4 md:px-5 py-2 md:py-1.5 rounded-full text-[10px] md:text-[11px] uppercase tracking-[0.15em] font-medium transition-colors border border-border shadow-sm" data-tool="draw">Coret/Pen</button>
+                                        <button type="button" class="tool-btn bg-white text-foreground px-4 md:px-5 py-2 md:py-1.5 rounded-full text-[10px] md:text-[11px] uppercase tracking-[0.15em] font-medium transition-colors border border-border shadow-sm" data-tool="text">Teks</button>
+                                        
+                                        <div class="w-full md:w-px h-px md:h-auto bg-border my-1 md:my-1 md:mx-1 hidden md:block"></div>
+                                        
+                                        <button type="button" class="undo-highlight-btn bg-white border border-border text-foreground px-4 py-2 md:py-1.5 rounded-full text-[10px] md:text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-gray-100 transition-colors shadow-sm ml-auto md:ml-0">Undo</button>
+                                        <button type="button" class="clear-highlight-btn bg-white border border-border text-inalum-red px-4 py-2 md:py-1.5 rounded-full text-[10px] md:text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-red hover:text-white hover:border-inalum-red transition-colors shadow-sm">Clear All</button>
+                                    </div>
+                                    <input type="hidden" class="sld-hidden-data">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-8 md:mb-10"><button type="button" id="addOutageBtn" class="w-full border-2 border-dashed border-border bg-background-soft text-inalum-blue p-4 md:p-5 rounded-2xl md:rounded-3xl font-medium uppercase tracking-[0.15em] text-[10px] md:text-xs hover:border-inalum-blue hover:bg-white transition-colors">+ Tambah Request Pemadaman Selanjutnya</button></div>
+                        <div class="flex justify-end"><button type="submit" class="w-full md:w-auto bg-inalum-blue text-white px-6 md:px-8 py-3.5 md:py-3 rounded-full font-medium uppercase tracking-[0.15em] text-[10px] md:text-xs hover:bg-inalum-bluehover transition-colors shadow-lg">Simpan Semua Jadwal</button></div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="view-history" class="max-w-5xl mx-auto hidden space-y-4 md:space-y-6 w-full">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-inalum-blue">Histori Pengajuan</h2>
+                        <span class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Arsip Keseluruhan</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-white border border-border p-1.5 rounded-xl shadow-sm shrink-0">
+                        <span class="pl-2 text-muted">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </span>
+                        <input type="date" id="historyDateFilter" onchange="loadDataFromServer()" class="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer">
+                        <button onclick="document.getElementById('historyDateFilter').value=''; loadDataFromServer()" class="px-2 py-1 bg-background-soft text-[10px] uppercase tracking-wider rounded-lg hover:bg-border transition-colors">Reset</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl md:rounded-3xl border border-border overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr class="text-muted text-[10px] md:text-[11px] uppercase tracking-[0.15em] border-b border-border bg-background-soft/50">
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap">ID</th>
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap">Pemohon</th>
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap">Departemen</th>
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap">Tanggal Pengajuan</th>
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap">Status</th>
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody" class="text-xs md:text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-approval" class="max-w-5xl mx-auto hidden space-y-4 md:space-y-6 w-full">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-inalum-blue" id="approvalPanelTitle">Panel Validasi Pengajuan</h2>
+                        <span class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Aksi Diperlukan</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-white border border-border p-1.5 rounded-xl shadow-sm shrink-0">
+                        <span class="pl-2 text-muted">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </span>
+                        <input type="date" id="approvalDateFilter" onchange="loadDataFromServer()" class="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer">
+                        <button onclick="document.getElementById('approvalDateFilter').value=''; loadDataFromServer()" class="px-2 py-1 bg-background-soft text-[10px] uppercase tracking-wider rounded-lg hover:bg-border transition-colors">Reset</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl md:rounded-3xl border border-border overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full text-left border-collapse min-w-[900px]">
+                            <thead>
+                                <tr class="text-muted text-[10px] md:text-[11px] uppercase tracking-[0.15em] border-b border-border bg-background-soft/50">
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap">ID</th>
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap">Dipersiapkan Oleh</th>
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap">Departemen</th>
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap">Status</th>
+                                    <th class="p-3 md:p-4 font-medium whitespace-nowrap text-right">Aksi Validasi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approvalTableBody" class="text-xs md:text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <div id="detailModal" class="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-50 hidden flex flex-col items-center justify-end md:justify-center p-0 md:p-4 transition-all">
+                <div class="bg-background w-full h-[90vh] md:h-auto md:max-h-[90vh] md:max-w-4xl rounded-t-3xl md:rounded-3xl border border-border flex flex-col overflow-hidden shadow-2xl animate-[fade-up_0.3s_ease-out]">
+                    <div class="w-full flex justify-center pt-3 pb-1 md:hidden bg-white"><div class="w-12 h-1.5 bg-border rounded-full"></div></div>
+                    
+                    <div class="p-4 md:p-6 border-b border-border flex justify-between items-center bg-white shrink-0">
+                        <h3 class="text-lg md:text-xl font-medium tracking-tight text-inalum-blue truncate mr-4" id="modalTitle">Detail Permohonan</h3>
+                        <button onclick="closeDetailModal()" class="text-muted hover:text-inalum-red text-3xl leading-none transition-colors p-2 -m-2" aria-label="Tutup">&times;</button>
+                    </div>
+                    <div class="p-4 md:p-8 overflow-y-auto flex-1 bg-background overscroll-contain" id="modalContent">
+                    </div>
+                    <div class="p-4 md:p-5 border-t border-border flex justify-end gap-3 bg-white shrink-0">
+                        <button id="btnPrintPDF" onclick="window.print()" class="hidden w-full md:w-auto bg-inalum-green text-white px-6 py-3 md:py-2.5 rounded-full font-medium uppercase tracking-[0.15em] text-[10px] md:text-xs hover:bg-inalum-green/90 transition-colors shadow-sm">
+                            Cetak PDF
+                        </button>
+                        <button onclick="closeDetailModal()" class="w-full md:w-auto border border-border text-foreground px-6 py-3 md:py-2.5 rounded-full font-medium uppercase tracking-[0.15em] text-[10px] md:text-xs hover:bg-gray-100 transition-colors">Tutup Dokumen</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="printTemplateContainer" class="hidden"></div>
+
+        </main>
+    </div>
+
+    <script>
+        let currentRole = 'pemohon';
+        let outageCount = 1;
+
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobileDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            if (drawer.classList.contains('-translate-x-full')) {
+                drawer.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                drawer.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        const heroPhrases = ['Kelola Pemadaman.', 'Rencanakan Presisi.', 'Pantau Setiap Proses.'];
+        let heroPhraseIndex = 0;
+        let heroCharIndex = 0;
+        let heroDeleting = false;
+
+        function tickHeroTyping() {
+            const el = document.getElementById('heroTypedText');
+            if (!el) return;
+            const current = heroPhrases[heroPhraseIndex];
+
+            if (!heroDeleting && heroCharIndex === current.length) {
+                setTimeout(() => { heroDeleting = true; tickHeroTyping(); }, 1600);
+                return;
+            }
+            if (heroDeleting && heroCharIndex === 0) {
+                heroDeleting = false;
+                heroPhraseIndex = (heroPhraseIndex + 1) % heroPhrases.length;
+            }
+
+            heroCharIndex += heroDeleting ? -1 : 1;
+            el.textContent = current.slice(0, heroCharIndex);
+            setTimeout(tickHeroTyping, heroDeleting ? 35 : 75);
+        }
+
+        function tickHeroClock() {
+            const el = document.getElementById('heroClock');
+            if (!el) return;
+            const isMobile = window.innerWidth < 640;
+            const options = isMobile ? { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' } : { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' };
+            el.textContent = new Date().toLocaleString('id-ID', options).replace('pukul', '|');
+        }
+        setInterval(tickHeroClock, 1000);
+        tickHeroClock();
+        tickHeroTyping();
+
+        function animateCountUp(id, target) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const from = parseInt(el.dataset.value || '0', 10);
+            if (from === target) { el.textContent = target; return; }
+            const duration = 600;
+            const start = performance.now();
+            function frame(now) {
+                const progress = Math.min((now - start) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 4);
+                const value = Math.round(from + (target - from) * eased);
+                el.textContent = value;
+                if (progress < 1) requestAnimationFrame(frame);
+                else el.dataset.value = target;
+            }
+            requestAnimationFrame(frame);
+        }
+
+        function timeAgo(dateString) {
+            const diffMs = Date.now() - new Date(dateString).getTime();
+            const mins = Math.floor(diffMs / 60000);
+            if (mins < 1) return 'Baru saja';
+            if (mins < 60) return `${mins} menit lalu`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `${hours} jam lalu`;
+            const days = Math.floor(hours / 24);
+            return `${days} hari lalu`;
+        }
+
+        function renderRecentActivity(listData) {
+            const el = document.getElementById('recentActivityList');
+            if (!el) return;
+            if (!listData.length) {
+                el.innerHTML = '<p class="p-6 text-sm text-muted italic text-center md:text-left">Belum ada pengajuan.</p>';
+                return;
+            }
+            const recent = [...listData].sort((a, b) => new Date(b.tanggal_pengajuan) - new Date(a.tanggal_pengajuan)).slice(0, 5);
+            el.innerHTML = recent.map((d, i) => `
+                <div class="fade-up-row flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 md:p-5 hover:bg-background-soft/50 transition-colors" style="animation-delay: ${i * 60}ms">
+                    <div class="flex items-center gap-3 md:gap-4 min-w-0">
+                        <div class="h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full bg-inalum-blue text-white flex items-center justify-center text-[10px] md:text-xs font-medium">${(d.username || '?')[0].toUpperCase()}</div>
+                        <div class="min-w-0">
+                            <p class="text-xs md:text-sm font-medium truncate">${d.username} &middot; ${d.departemen}</p>
+                            <p class="text-[10px] md:text-xs text-muted mt-0.5">${timeAgo(d.tanggal_pengajuan)}</p>
+                        </div>
+                    </div>
+                    <div class="self-start sm:self-auto ml-11 sm:ml-0">${statusBadge(d.status)}</div>
+                </div>
+            `).join('');
+        }
+
+        const handleLogout = async () => {
+            const res = await fetch('/api/logout', { method: 'POST' });
+            if (res.ok) window.location.href = '/login.html';
+        };
+
+        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        document.getElementById('logoutBtnMobile').addEventListener('click', handleLogout);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/api/user/me');
+                if(!res.ok) window.location.href = '/login.html';
+                const user = await res.json();
+
+                currentRole = user.role;
+                document.getElementById('userGreeting').innerText = `${user.username} (${user.role})`;
+                document.getElementById('avatarLetter').innerText = user.username[0].toUpperCase();
+
+                if(currentRole === 'pemeriksa' || currentRole === 'penyetuju') {
+                    document.getElementById('nav-approval').classList.remove('hidden');
+                    document.getElementById('nav-approval').innerText = currentRole === 'pemeriksa' ? 'Validasi Pemeriksa' : 'Persetujuan Final';
+                    document.getElementById('nav-approval-mobile').classList.remove('hidden');
+                    document.getElementById('nav-approval-mobile').innerText = currentRole === 'pemeriksa' ? 'Validasi Pemeriksa' : 'Persetujuan Final';
+                    document.getElementById('approvalPanelTitle').innerText = currentRole === 'pemeriksa' ? 'Panel Validasi (Pemeriksa)' : 'Panel Persetujuan (Manajer)';
+                }
+
+                initCanvasForOutage(document.querySelector('.outage-block'));
+                showView('overview');
+            } catch (e) { window.location.href = '/login.html'; }
+        });
+
+        function showView(viewName) {
+            const views = ['overview', 'form', 'history', 'approval'];
+            views.forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                const navBtn = document.getElementById(`nav-${v}`);
+                if(navBtn) navBtn.className = "nav-btn w-full text-left block px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white";
+                const mobileNavBtn = document.getElementById(`nav-${v}-mobile`);
+                if(mobileNavBtn) mobileNavBtn.className = "nav-btn w-full text-left block px-4 py-3 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50";
+            });
+
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            
+            const activeNav = document.getElementById(`nav-${viewName}`);
+            if(activeNav) activeNav.className = "nav-btn w-full text-left block px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] font-bold bg-white text-inalum-blue transition-colors";
+            
+            const activeMobileNav = document.getElementById(`nav-${viewName}-mobile`);
+            if(activeMobileNav) activeMobileNav.className = "nav-btn w-full text-left block px-4 py-3 rounded-lg text-xs uppercase tracking-[0.15em] font-bold bg-white text-inalum-blue transition-colors";
+
+            if(['overview', 'history', 'approval'].includes(viewName)) {
+                loadDataFromServer();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function statusDot(status) {
+            if(status === 'Disetujui' || status === 'Approved') return 'bg-inalum-green';
+            if(status === 'Diperiksa') return 'bg-inalum-blue';
+            if(status === 'Ditolak' || status === 'Rejected') return 'bg-inalum-red';
+            return 'bg-amber-500';
+        }
+
+        function statusBadge(status) {
+            return `<span class="inline-flex items-center gap-1.5 px-2 md:px-3 py-1 rounded-full border border-border text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium whitespace-nowrap"><span class="h-1.5 w-1.5 rounded-full ${statusDot(status)} shrink-0"></span>${status}</span>`;
+        }
+
+        async function loadDataFromServer() {
+            try {
+                const res = await fetch('/api/requests/data');
+                const listData = await res.json();
+
+                animateCountUp('stat-total', listData.length);
+                animateCountUp('stat-pending', listData.filter(d => d.status === 'Pending').length);
+                animateCountUp('stat-approved', listData.filter(d => d.status === 'Approved' || d.status === 'Disetujui').length);
+                animateCountUp('stat-rejected', listData.filter(d => d.status === 'Rejected' || d.status === 'Ditolak').length);
+                renderRecentActivity(listData);
+
+                const historyFilter = document.getElementById('historyDateFilter')?.value;
+                const approvalFilter = document.getElementById('approvalDateFilter')?.value;
+
+                const getLocalDateString = (utcDateStr) => {
+                    const d = new Date(utcDateStr);
+                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                };
+
+                let historyData = listData;
+                if (historyFilter) {
+                    historyData = historyData.filter(d => getLocalDateString(d.tanggal_pengajuan) === historyFilter);
+                }
+
+                let approvalData = listData;
+                if (approvalFilter) {
+                    approvalData = approvalData.filter(d => getLocalDateString(d.tanggal_pengajuan) === approvalFilter);
+                }
+
+                const tbodyHistory = document.getElementById('historyTableBody');
+                if (historyData.length === 0) {
+                    tbodyHistory.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-muted italic">Tidak ada pengajuan pada tanggal tersebut.</td></tr>`;
+                } else {
+                    tbodyHistory.innerHTML = historyData.map(d => `
+                        <tr class="border-b border-border hover:bg-background-soft/50 transition-colors">
+                            <td class="p-3 md:p-4 font-medium">#${d.id}</td>
+                            <td class="p-3 md:p-4">${d.username}</td>
+                            <td class="p-3 md:p-4">${d.departemen}</td>
+                            <td class="p-3 md:p-4">${new Date(d.tanggal_pengajuan).toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}</td>
+                            <td class="p-3 md:p-4">${statusBadge(d.status)}</td>
+                            <td class="p-3 md:p-4 text-right"><button onclick="openDetailModal(${d.id})" class="bg-white border border-border px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-blue hover:text-white transition-colors whitespace-nowrap">Detail</button></td>
+                        </tr>
+                    `).join('');
+                }
+
+                if(currentRole === 'pemeriksa' || currentRole === 'penyetuju') {
+                    const tbodyApproval = document.getElementById('approvalTableBody');
+                    if (approvalData.length === 0) {
+                        tbodyApproval.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-muted italic">Tidak ada dokumen yang perlu divalidasi pada tanggal tersebut.</td></tr>`;
+                    } else {
+                        tbodyApproval.innerHTML = approvalData.map(d => {
+                            let actionButtons = `<span class="text-[10px] md:text-xs text-muted italic whitespace-nowrap">Tidak ada aksi tersedia</span>`;
+
+                            if (currentRole === 'pemeriksa' && d.status === 'Pending') {
+                                actionButtons = `
+                                    <button onclick="updateStatus(${d.id}, 'Diperiksa')" class="bg-inalum-blue text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-bluehover transition-transform active:scale-95 whitespace-nowrap">Tandai Diperiksa</button>
+                                    <button onclick="updateStatus(${d.id}, 'Ditolak')" class="border border-inalum-red text-inalum-red px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-red hover:text-white transition-transform active:scale-95 whitespace-nowrap">Tolak</button>
+                                `;
+                            } else if (currentRole === 'penyetuju' && d.status === 'Diperiksa') {
+                                actionButtons = `
+                                    <button onclick="updateStatus(${d.id}, 'Disetujui')" class="bg-inalum-green text-white px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-green/90 transition-transform active:scale-95 whitespace-nowrap">Ya, Setuju</button>
+                                    <button onclick="updateStatus(${d.id}, 'Ditolak')" class="border border-inalum-red text-inalum-red px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-red hover:text-white transition-transform active:scale-95 whitespace-nowrap">Tidak (Tolak)</button>
+                                `;
+                            }
+
+                            return `
+                            <tr class="border-b border-border hover:bg-background-soft/50 transition-colors">
+                                <td class="p-3 md:p-4 font-medium">#${d.id}</td>
+                                <td class="p-3 md:p-4">${d.dipersiapkan_oleh}</td>
+                                <td class="p-3 md:p-4">${d.departemen}</td>
+                                <td class="p-3 md:p-4">${statusBadge(d.status)}</td>
+                                <td class="p-3 md:p-4 text-right">
+                                    <div class="flex flex-wrap justify-end gap-2">
+                                        <button onclick="openDetailModal(${d.id})" class="bg-white border border-border px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-background-soft transition-colors whitespace-nowrap">Lihat Dokumen</button>
+                                        ${actionButtons}
+                                    </div>
+                                </td>
+                            </tr>
+                            `;
+                        }).join('');
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function updateStatus(id, newStatus) {
+            let confirmMsg = `Ubah status pengajuan #${id} menjadi ${newStatus}?`;
+            if(newStatus === 'Disetujui' || newStatus === 'Ditolak') {
+                confirmMsg = `Apakah Anda yakin ingin memberikan keputusan ${newStatus} pada pengajuan #${id}?`;
+            }
+            if(!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch(`/api/requests/${id}/status`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if(res.ok) {
+                    showNotification('Keputusan berhasil disimpan!', 'bg-background-soft text-inalum-blue border-border');
+                    loadDataFromServer();
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function submitForm(e) {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = "Menyimpan...";
+            submitBtn.disabled = true;
+
+            const payload = {
+                departemen_pemohon: document.getElementById('form-dept').value,
+                dipersiapkan_oleh: document.getElementById('form-preby').value,
+                outages: []
+            };
+
+            document.querySelectorAll('.outage-block').forEach(block => {
+                const tasks = [];
+                block.querySelectorAll('.task-input').forEach(ti => { if(ti.value) tasks.push(ti.value); });
+                payload.outages.push({
+                    jenis_pemadaman: block.querySelector('[name="jenis_pemadaman"]').value,
+                    area_dari: block.querySelector('[name="area_dari"]').value,
+                    area_ke: block.querySelector('[name="area_ke"]').value,
+                    waktu_kerja_mulai: block.querySelector('[name="waktu_kerja_mulai"]').value,
+                    waktu_kerja_selesai: block.querySelector('[name="waktu_kerja_selesai"]').value,
+                    waktu_padam_mulai: block.querySelector('[name="waktu_padam_mulai"]').value,
+                    waktu_padam_selesai: block.querySelector('[name="waktu_padam_selesai"]').value,
+                    titik_pentahanan: block.querySelector('[name="titik_pentahanan"]').value,
+                    komunikasi: block.querySelector('[name="komunikasi"]').value,
+                    kepala_pelaksana: block.querySelector('[name="kepala_pelaksana"]').value,
+                    keterangan: block.querySelector('[name="keterangan"]').value,
+                    sld_data: block.querySelector('.sld-hidden-data').value,
+                    tasks: tasks
+                });
+            });
+
+            try {
+                const res = await fetch('/api/requests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const resData = await res.json();
+                if(res.ok) {
+                    showNotification(resData.message, 'bg-background-soft text-inalum-blue border-border');
+                    document.getElementById('mainForm').reset();
+                    document.querySelectorAll('.outage-block').forEach((block, index) => {
+                        if (index > 0) block.remove();
+                        else {
+                            block.querySelector('.sld-hidden-data').value = '';
+                            block.querySelector('.sld-canvas').classList.add('hidden');
+                            block.querySelector('.canvas-placeholder').classList.remove('hidden');
+                            block.querySelector('.canvas-controls').classList.add('hidden');
+                        }
+                    });
+                    outageCount = 1;
+                    showView('overview');
+                } else {
+                    showNotification(resData.error, 'bg-red-50 text-inalum-red border-red-200');
+                }
+            } catch (err) { 
+                showNotification('Gagal terhubung ke database. Pastikan koneksi stabil.', 'bg-red-50 text-inalum-red border-red-200'); 
+            } finally {
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function showNotification(msg, styleClass) {
+            const el = document.getElementById('alertNotification');
+            el.innerText = msg;
+            el.className = `max-w-5xl mx-auto border p-4 rounded-xl text-xs md:text-sm text-center font-medium shadow-sm ${styleClass}`;
+            el.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+
+        async function openDetailModal(id) {
+            try {
+                const res = await fetch(`/api/requests/${id}/detail`);
+                if (!res.ok) throw new Error('Gagal mengambil detail');
+                const data = await res.json();
+
+                document.getElementById('modalTitle').innerText = `Detail Pengajuan #${id}`;
+
+                // HELPER: Format Tanggal dan Jam
+                const formatDate = (dateStr) => {
+                    return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                };
+                const formatTime = (dateStr) => {
+                    return new Date(dateStr).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+                };
+
+                // VARIABEL SEMENTARA: Nama Pemeriksa & Penyetuju
+                // (Jika backend belum menyimpan siapa yang menyetujui, kita gunakan placeholder yang jelas)
+                const namaPemeriksa = data.request.pemeriksa_oleh || '<span class="text-gray-400 italic">Menunggu...</span>';
+                const namaPenyetuju = data.request.disetujui_oleh || '<span class="text-gray-400 italic">Menunggu...</span>';
+
+                // --- TAMPILAN MODAL UI (DI WEB) ---
+                let contentHTML = `
+                    <div class="bg-white p-4 md:p-6 rounded-2xl border border-border mb-4 md:mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 shadow-sm">
+                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Dibuat Oleh</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${data.request.username}</span></div>
+                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Departemen</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${data.request.departemen}</span></div>
+                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">PIC Pemohon</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${data.request.dipersiapkan_oleh}</span></div>
+                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Pemeriksa</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${namaPemeriksa}</span></div>
+                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Penyetuju</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${namaPenyetuju}</span></div>
+                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Status</span>${statusBadge(data.request.status)}</div>
+                    </div>
+                `;
+
+                data.outages.forEach((out, index) => {
+                    contentHTML += `
+                        <div class="bg-white p-4 md:p-8 rounded-2xl md:rounded-3xl border border-border mb-6 shadow-sm">
+                            <span class="inline-block bg-background-soft px-3 py-1 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-medium text-inalum-blue mb-3">Pemadaman 0${index + 1}</span>
+                            <h4 class="font-medium text-lg md:text-xl tracking-tight mb-4 pb-4 border-b border-border">${out.jenis_pemadaman}</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 text-xs md:text-sm mb-6">
+                                <div class="bg-background-soft p-3 md:p-4 rounded-xl border border-border col-span-1 md:col-span-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                    <div><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Area Terdampak</span><b class="font-medium">${out.area_dari}</b> <span class="text-muted mx-1">s/d</span> <b class="font-medium">${out.area_ke}</b></div>
+                                    <div><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Kepala Pelaksana</span><b class="font-medium">${out.kepala_pelaksana}</b></div>
+                                </div>
+                                
+                                <div class="border border-border p-3 md:p-4 rounded-xl col-span-1 md:col-span-2">
+                                    <span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-2 border-b border-border pb-2">Rincian Waktu Pelaksanaan</span>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left text-xs md:text-sm">
+                                            <thead>
+                                                <tr class="text-muted border-b border-border">
+                                                    <th class="py-2 font-medium">Keterangan</th>
+                                                    <th class="py-2 font-medium">Dari Tanggal</th>
+                                                    <th class="py-2 font-medium">Jam</th>
+                                                    <th class="py-2 font-medium">Sampai Tanggal</th>
+                                                    <th class="py-2 font-medium">Jam</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="border-b border-border/50">
+                                                    <td class="py-2 font-medium flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-green shrink-0"></span>Kerja</td>
+                                                    <td class="py-2">${formatDate(out.waktu_kerja_mulai)}</td>
+                                                    <td class="py-2">${formatTime(out.waktu_kerja_mulai)}</td>
+                                                    <td class="py-2">${formatDate(out.waktu_kerja_selesai)}</td>
+                                                    <td class="py-2">${formatTime(out.waktu_kerja_selesai)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="py-2 font-medium flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-red shrink-0"></span>Padam</td>
+                                                    <td class="py-2 text-inalum-red font-medium">${formatDate(out.waktu_padam_mulai)}</td>
+                                                    <td class="py-2 text-inalum-red font-medium">${formatTime(out.waktu_padam_mulai)}</td>
+                                                    <td class="py-2 text-inalum-red font-medium">${formatDate(out.waktu_padam_selesai)}</td>
+                                                    <td class="py-2 text-inalum-red font-medium">${formatTime(out.waktu_padam_selesai)}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="col-span-1 md:col-span-2 grid grid-cols-2 gap-3 mt-2">
+                                    <div><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Titik Pentahanan</span>${out.titik_pentahanan || '-'}</div>
+                                    <div><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Komunikasi</span>${out.komunikasi || '-'}</div>
+                                </div>
+                                
+                                ${out.keterangan ? `<div class="col-span-1 md:col-span-2 mt-2 pt-3 border-t border-border"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Keterangan Tambahan</span>${out.keterangan}</div>` : ''}
+                            </div>
+
+                            <div class="mb-6">
+                                <span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-2">Rincian Pekerjaan</span>
+                                <ul class="list-none text-xs md:text-sm space-y-2">
+                                    ${out.tasks.map(t => `<li class="bg-background p-3 rounded-lg border border-border flex items-center gap-3"><span class="h-1.5 w-1.5 rounded-full bg-inalum-blue shrink-0"></span>${t}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <div>
+                                <span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-2">Lampiran SLD (PDF Render)</span>
+                                ${out.sld_data ? `<div class="border border-border rounded-xl p-1 bg-background-soft"><img src="${out.sld_data}" alt="SLD Annotated" class="w-full h-auto rounded-lg"></div>` : '<p class="text-xs italic text-muted bg-background p-4 rounded-xl border border-border text-center">Tidak ada lampiran SLD.</p>'}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                const btnPrint = document.getElementById('btnPrintPDF');
+                if (data.request.status === 'Disetujui' || data.request.status === 'Approved') {
+                    btnPrint.classList.remove('hidden');
+                } else {
+                    btnPrint.classList.add('hidden');
+                }
+
+                document.getElementById('modalContent').innerHTML = contentHTML;
+                document.body.style.overflow = 'hidden'; 
+                document.getElementById('detailModal').classList.remove('hidden');
+
+
+                // --- GENERATE TEMPLATE CETAK RESMI (FORMULIR PDF) ---
+                const namaPemeriksaPDF = data.request.pemeriksa_oleh || '(..................................)';
+                const namaPenyetujuPDF = data.request.disetujui_oleh || '(..................................)';
+
+                let printHTML = `
+                    <div style="font-family: Arial, sans-serif; color: black;">
+                        <table style="width: 100%; border-collapse: collapse; border: 2px solid black; margin-bottom: 20px;">
+                            <tr>
+                                <td style="width: 25%; padding: 10px; border-right: 2px solid black; text-align: center;">
+                                    <img src="/logo-inalum-login.png" alt="INALUM" style="max-height: 60px;">
+                                </td>
+                                <td style="width: 75%; padding: 10px; text-align: center;">
+                                    <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">FORMULIR PERMOHONAN JADWAL PEMADAMAN</h2>
+                                    <p style="margin: 5px 0 0 0; font-size: 12px;">PT Indonesia Asahan Aluminium</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px;">
+                            <tr>
+                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">ID Pengajuan</td>
+                                <td style="padding: 6px; border: 1px solid black; width: 25%;">#${data.request.id}</td>
+                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">Status</td>
+                                <td style="padding: 6px; border: 1px solid black; width: 25%;">${data.request.status}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Departemen</td>
+                                <td style="padding: 6px; border: 1px solid black;">${data.request.departemen}</td>
+                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Tanggal Pengajuan</td>
+                                <td style="padding: 6px; border: 1px solid black;">${formatDate(data.request.tanggal_pengajuan)} ${formatTime(data.request.tanggal_pengajuan)}</td>
+                            </tr>
+                        </table>
+                `;
+
+                // Variabel terpisah untuk menampung gambar SLD agar diletakkan di halaman paling akhir
+                let sldAttachmentsHTML = '';
+
+                // RINCIAN PEMADAMAN
+                data.outages.forEach((out, index) => {
+                    printHTML += `
+                        <h3 style="font-size: 14px; margin-bottom: 5px; border-bottom: 1px solid black; padding-bottom: 3px;">Pemadaman ${index + 1}: ${out.jenis_pemadaman}</h3>
+                        
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; text-align: left;">
+                            <tr>
+                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Pelaksanaan</th>
+                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Dari Tanggal</th>
+                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Jam</th>
+                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Sampai Tanggal</th>
+                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Jam</th>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Jadwal Kerja</td>
+                                <td style="padding: 6px; border: 1px solid black;">${formatDate(out.waktu_kerja_mulai)}</td>
+                                <td style="padding: 6px; border: 1px solid black;">${formatTime(out.waktu_kerja_mulai)}</td>
+                                <td style="padding: 6px; border: 1px solid black;">${formatDate(out.waktu_kerja_selesai)}</td>
+                                <td style="padding: 6px; border: 1px solid black;">${formatTime(out.waktu_kerja_selesai)}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Jadwal Padam</td>
+                                <td style="padding: 6px; border: 1px solid black; color: #E31B23;">${formatDate(out.waktu_padam_mulai)}</td>
+                                <td style="padding: 6px; border: 1px solid black; color: #E31B23;">${formatTime(out.waktu_padam_mulai)}</td>
+                                <td style="padding: 6px; border: 1px solid black; color: #E31B23;">${formatDate(out.waktu_padam_selesai)}</td>
+                                <td style="padding: 6px; border: 1px solid black; color: #E31B23;">${formatTime(out.waktu_padam_selesai)}</td>
+                            </tr>
+                        </table>
+
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px;">
+                            <tr>
+                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">Area Terdampak</td>
+                                <td style="padding: 6px; border: 1px solid black;" colspan="3">${out.area_dari} s/d ${out.area_ke}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">Titik Pentahanan</td>
+                                <td style="padding: 6px; border: 1px solid black; width: 25%;">${out.titik_pentahanan || '-'}</td>
+                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">Komunikasi</td>
+                                <td style="padding: 6px; border: 1px solid black; width: 25%;">${out.komunikasi || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Kepala Pelaksana</td>
+                                <td style="padding: 6px; border: 1px solid black;">${out.kepala_pelaksana || '-'}</td>
+                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Keterangan Tambahan</td>
+                                <td style="padding: 6px; border: 1px solid black;">${out.keterangan || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Rincian Pekerjaan</td>
+                                <td style="padding: 6px; border: 1px solid black;" colspan="3">
+                                    <ul style="margin: 0; padding-left: 15px;">
+                                        ${out.tasks.map(t => `<li>${t}</li>`).join('')}
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
+                    `;
+
+                    // SIMPAN LAMPIRAN GAMBAR SLD UNTUK DITAMPILKAN DI HALAMAN PALING BELAKANG
+                    if (out.sld_data) {
+                        sldAttachmentsHTML += `
+                            <div style="page-break-before: always; padding-top: 20px;">
+                                <h2 style="font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid black; padding-bottom: 5px; text-transform: uppercase;">
+                                    LAMPIRAN SLD - PEMADAMAN ${index + 1}
+                                </h2>
+                                <div style="text-align: center;">
+                                    <img src="${out.sld_data}" style="max-width: 100%; max-height: 24cm; border: 1px solid #ccc;">
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                // KOLOM TANDA TANGAN (APPROVAL)
+                printHTML += `
+                        <br>
+                        <table style="width: 100%; margin-top: 30px; font-size: 12px; text-align: center; page-break-inside: avoid;">
+                            <tr>
+                                <td style="width: 33%;">
+                                    <p>Dipersiapkan Oleh,</p>
+                                    <br><br><br>
+                                    <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;">${data.request.dipersiapkan_oleh}</p>
+                                    <p style="margin-top: 2px;">Pemohon</p>
+                                </td>
+                                <td style="width: 33%;">
+                                    <p>Diperiksa Oleh,</p>
+                                    <br><br><br>
+                                    <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;">${namaPemeriksaPDF}</p>
+                                    <p style="margin-top: 2px;">Supervisor/Pemeriksa</p>
+                                </td>
+                                <td style="width: 33%;">
+                                    <p>Disetujui Oleh,</p>
+                                    <br><br><br>
+                                    <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;">${namaPenyetujuPDF}</p>
+                                    <p style="margin-top: 2px;">Manajer Seksi</p>
+                                </td>
+                            </tr>
+                        </table>
+                `;
+
+                // GABUNGKAN GAMBAR SLD DI HALAMAN PALING BELAKANG
+                printHTML += sldAttachmentsHTML;
+                printHTML += `</div>`; // Tutup div utama pembungkus printHTML
+
+                // Memasukkan template yang sudah dibuat ke dalam kontainer print
+                document.getElementById('printTemplateContainer').innerHTML = printHTML;
+
+            } catch(e) {
+                alert('Gagal memuat detail permohonan dari database.');
+            }
+        }
+
+        function closeDetailModal() {
+            document.body.style.overflow = '';
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        function initCanvasForOutage(outageBlockElement) {
+            const upload = outageBlockElement.querySelector('.sld-upload');
+            const canvas = outageBlockElement.querySelector('.sld-canvas');
+            const ctx = canvas.getContext('2d');
+            const placeholder = outageBlockElement.querySelector('.canvas-placeholder');
+            const controls = outageBlockElement.querySelector('.canvas-controls');
+            const toolBtns = outageBlockElement.querySelectorAll('.tool-btn');
+            const undoBtn = outageBlockElement.querySelector('.undo-highlight-btn');
+            const clearBtn = outageBlockElement.querySelector('.clear-highlight-btn');
+            const hiddenData = outageBlockElement.querySelector('.sld-hidden-data');
+            const wrapper = outageBlockElement.querySelector('.canvas-wrapper');
+
+            let offscreenCanvas = document.createElement('canvas');
+            let offscreenCtx = offscreenCanvas.getContext('2d');
+
+            let activeTool = 'highlight'; 
+            let isDrawing = false;
+            let startX, startY;
+            let currentRect = null;
+            let currentPath = [];
+            let savedAnnotations = [];
+
+            toolBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    toolBtns.forEach(b => {
+                        b.classList.remove('bg-inalum-blue', 'text-white', 'border-inalum-blue');
+                        b.classList.add('bg-white', 'text-foreground', 'border-border');
+                    });
+                    btn.classList.remove('bg-white', 'text-foreground', 'border-border');
+                    btn.classList.add('bg-inalum-blue', 'text-white', 'border-inalum-blue');
+                    
+                    activeTool = btn.getAttribute('data-tool');
+                    canvas.style.cursor = activeTool === 'text' ? 'text' : 'crosshair';
+                });
+            });
+
+            function redrawCanvas() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (offscreenCanvas.width > 0) ctx.drawImage(offscreenCanvas, 0, 0);
+
+                const drawShape = (anno) => {
+                    if (anno.type === 'highlight') {
+                        ctx.fillStyle = 'rgba(250, 204, 21, 0.4)';
+                        ctx.strokeStyle = '#eab308';
+                        ctx.lineWidth = 2;
+                        ctx.fillRect(anno.x, anno.y, anno.w, anno.h);
+                        ctx.strokeRect(anno.x, anno.y, anno.w, anno.h);
+                    } else if (anno.type === 'draw') {
+                        if (!anno.points || anno.points.length === 0) return;
+                        ctx.strokeStyle = '#E31B23';
+                        ctx.lineWidth = 3;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        ctx.beginPath();
+                        ctx.moveTo(anno.points[0].x, anno.points[0].y);
+                        for (let i = 1; i < anno.points.length; i++) ctx.lineTo(anno.points[i].x, anno.points[i].y);
+                        ctx.stroke();
+                    } else if (anno.type === 'text') {
+                        ctx.font = 'bold 16px sans-serif';
+                        ctx.fillStyle = '#E31B23'; 
+                        ctx.textBaseline = 'top';
+                        ctx.fillText(anno.text, anno.x, anno.y);
+                    }
+                };
+
+                savedAnnotations.forEach(drawShape);
+                if (activeTool === 'highlight' && currentRect) drawShape({ type: 'highlight', ...currentRect });
+                if (activeTool === 'draw' && currentPath.length > 0) drawShape({ type: 'draw', points: currentPath });
+            }
+
+            function saveCanvasState() {
+                if (offscreenCanvas.width > 0) hiddenData.value = canvas.toDataURL("image/png");
+            }
+
+            upload.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.type !== 'application/pdf') { alert('Mohon unggah file dengan format .pdf'); upload.value = ''; return; }
+
+                placeholder.textContent = 'Memuat PDF...';
+                const fileReader = new FileReader();
+                fileReader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    try {
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        const page = await pdf.getPage(1); 
+                        const maxWidth = wrapper.clientWidth - 32; 
+                        const unscaledViewport = page.getViewport({ scale: 1.0 });
+                        const scale = maxWidth / unscaledViewport.width;
+                        const finalScale = scale < 1.5 ? scale : 1.5; 
+                        const viewport = page.getViewport({ scale: finalScale });
+                        
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+                        offscreenCanvas.width = viewport.width;
+                        offscreenCanvas.height = viewport.height;
+
+                        await page.render({ canvasContext: offscreenCtx, viewport: viewport }).promise;
+
+                        placeholder.classList.add('hidden');
+                        canvas.classList.remove('hidden');
+                        controls.classList.remove('hidden');
+                        wrapper.classList.remove('items-center', 'justify-center');
+
+                        savedAnnotations = []; currentRect = null; currentPath = [];
+                        redrawCanvas(); saveCanvasState();
+                    } catch (err) {
+                        alert('Gagal memproses file PDF tersebut.');
+                        placeholder.innerHTML = 'Preview PDF akan muncul di sini...<br><span class="text-[9px] mt-1 block opacity-70">Gunakan file PDF 1 halaman</span>';
+                    }
+                };
+                fileReader.readAsArrayBuffer(file);
+            });
+
+            function getPointerPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            }
+
+            canvas.addEventListener('mousedown', (e) => {
+                if (!offscreenCanvas.width) return;
+                const pos = getPointerPos(e);
+                if (activeTool === 'text') {
+                    const text = prompt('Ketik teks yang ingin ditambahkan:');
+                    if (text && text.trim() !== '') {
+                        savedAnnotations.push({ type: 'text', text: text, x: pos.x, y: pos.y });
+                        redrawCanvas(); saveCanvasState();
+                    }
+                    return;
+                }
+                isDrawing = true; startX = pos.x; startY = pos.y;
+                if (activeTool === 'draw') currentPath = [{ x: startX, y: startY }];
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                const pos = getPointerPos(e);
+                if (activeTool === 'highlight') {
+                    currentRect = { x: Math.min(startX, pos.x), y: Math.min(startY, pos.y), w: Math.abs(pos.x - startX), h: Math.abs(pos.y - startY) };
+                } else if (activeTool === 'draw') currentPath.push({ x: pos.x, y: pos.y });
+                redrawCanvas();
+            });
+
+            const finalizeInteraction = () => {
+                if (!isDrawing) return;
+                isDrawing = false;
+                if (activeTool === 'highlight' && currentRect && currentRect.w > 4 && currentRect.h > 4) savedAnnotations.push({ type: 'highlight', ...currentRect });
+                else if (activeTool === 'draw' && currentPath.length > 1) savedAnnotations.push({ type: 'draw', points: currentPath });
+                currentRect = null; currentPath = [];
+                redrawCanvas(); saveCanvasState();
+            };
+
+            canvas.addEventListener('mouseup', finalizeInteraction);
+            canvas.addEventListener('mouseleave', finalizeInteraction);
+
+            canvas.addEventListener('touchstart', (e) => { if(e.touches.length > 1) return; e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive: false});
+            canvas.addEventListener('touchmove', (e) => { if(e.touches.length > 1) return; e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive: false});
+            canvas.addEventListener('touchend', (e) => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup')); }, {passive: false});
+
+            undoBtn.addEventListener('click', () => { if (savedAnnotations.length > 0) { savedAnnotations.pop(); redrawCanvas(); saveCanvasState(); } });
+            clearBtn.addEventListener('click', () => { savedAnnotations = []; currentRect = null; currentPath = []; redrawCanvas(); saveCanvasState(); });
+        }
+
+        document.getElementById('outageRequestContainer').addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('add-task-btn')) {
+                const container = e.target.closest('.task-list-container');
+                const newRow = document.createElement('div');
+                newRow.className = 'flex items-center gap-2 mt-2 animate-[fade-up_0.2s_ease-out]';
+                newRow.innerHTML = `<input type="text" class="task-input flex-1 border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors" placeholder="Rincian pekerjaan tambahan..."><button type="button" class="remove-task-btn shrink-0 border border-border text-foreground w-10 h-10 md:w-9 md:h-9 rounded-full font-medium text-lg hover:bg-inalum-red hover:text-white hover:border-inalum-red transition-colors shadow-sm">&times;</button>`;
+                container.appendChild(newRow);
+            }
+            if (e.target && e.target.classList.contains('remove-task-btn')) e.target.parentElement.remove();
+            if (e.target && e.target.classList.contains('remove-outage-btn')) { e.target.closest('.outage-block').remove(); recalculateOutageLabels(); }
+        });
+
+        document.getElementById('addOutageBtn').addEventListener('click', function() {
+            outageCount++;
+            const container = document.getElementById('outageRequestContainer');
+            const newBlock = document.querySelector('.outage-block').cloneNode(true);
+
+            newBlock.setAttribute('data-outage', outageCount);
+            newBlock.querySelector('.remove-outage-btn').classList.remove('hidden');
+            newBlock.querySelectorAll('input[type="text"], input[type="datetime-local"]').forEach(input => input.value = '');
+            newBlock.querySelector('.sld-upload').value = '';
+            newBlock.querySelector('.sld-hidden-data').value = '';
+            newBlock.querySelector('.sld-canvas').classList.add('hidden');
+            newBlock.querySelector('.canvas-placeholder').classList.remove('hidden');
+            newBlock.querySelector('.canvas-controls').classList.add('hidden');
+            newBlock.querySelector('.canvas-placeholder').innerHTML = 'Preview PDF akan muncul di sini...<br><span class="text-[9px] mt-1 block opacity-70">Gunakan file PDF 1 halaman</span>';
+            newBlock.querySelector('.canvas-wrapper').className = 'canvas-wrapper relative border border-border rounded-xl bg-white min-h-[150px] flex items-center justify-center overflow-auto cursor-crosshair';
+
+            const newCanvas = newBlock.querySelector('.sld-canvas');
+            newCanvas.getContext('2d').clearRect(0, 0, newCanvas.width, newCanvas.height);
+            newBlock.querySelector('.task-list-container').innerHTML = `<div class="flex items-center gap-2"><input type="text" class="task-input flex-1 border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors" placeholder="Rincian pekerjaan..."><button type="button" class="add-task-btn shrink-0 bg-inalum-blue text-white w-10 h-10 md:w-9 md:h-9 rounded-full font-medium text-lg hover:bg-inalum-bluehover transition-colors shadow-sm">+</button></div>`;
+
+            newBlock.classList.add('animate-[fade-up_0.3s_ease-out]');
+            container.appendChild(newBlock);
+            recalculateOutageLabels();
+            initCanvasForOutage(newBlock);
+            setTimeout(() => newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        });
+
+        function recalculateOutageLabels() {
+            document.querySelectorAll('.outage-block').forEach((block, index) => {
+                const num = index + 1;
+                block.setAttribute('data-outage', num);
+                block.querySelector('.outage-label').innerText = `Pemadaman ke-${num}`;
+                if (num === 1) block.querySelector('.remove-outage-btn').classList.add('hidden');
+                else block.querySelector('.remove-outage-btn').classList.remove('hidden');
+            });
+            outageCount = document.querySelectorAll('.outage-block').length;
+        }
+    </script>
+</body>
+</html>
