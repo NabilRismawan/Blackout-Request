@@ -6,9 +6,9 @@ const dbPath = path.join(__dirname, 'database.sqlite');
 
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
-        console.error('Gagal membuka database:', err.message);
+        console.error('❌ Gagal membuka database:', err.message);
     } else {
-        console.log('Terkoneksi ke database SQLite.');
+        console.log('✅ Terkoneksi ke database SQLite.');
     }
 });
 
