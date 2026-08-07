@@ -1,0 +1,39 @@
+<!-- SIDEBAR DESKTOP (ANIMATED HOVER DOCK) -->
+<!-- Wrapper ini mengunci ruang 80px di layout flex agar konten utama menempel pas tanpa celah abu-abu -->
+<div class="hidden lg:block w-[80px] shrink-0 z-50">
+    <aside id="Desktop_LeftSidebar_Id" class="fixed left-0 top-0 bottom-0 bg-inalum-blue text-white flex flex-col shadow-2xl border-r border-white/10 overflow-hidden transition-all duration-300 ease-in-out">
+        <div class="h-16 flex items-center px-6 border-b border-white/10 min-w-[280px]">
+            <img src="/logo-inalum-dashboard.png" alt="INALUM" class="h-8 w-auto shrink-0 cursor-pointer">
+            <!-- Teks Logo disembunyikan secara default menggunakan opacity-0 -->
+            <h1 class="sidebar-logo-text ml-3 text-xs font-medium tracking-[0.2em] uppercase leading-tight opacity-0 transition-opacity duration-300">Outage<br />Request</h1>
+        </div>
+        
+        <!-- KONTAINER MENU (Diisi dinamis oleh app.js) -->
+        <nav id="desktop-nav-container" class="flex-1 px-4 py-8 space-y-2 overflow-y-auto overflow-x-hidden min-w-[280px]">
+        </nav>
+        
+        <div class="p-4 border-t border-white/10 min-w-[280px]">
+            <button id="logoutBtn" class="flex items-center w-full border border-white/20 text-white p-3 rounded-xl transition-colors hover:bg-white hover:text-inalum-blue group">
+                <div class="ml-1 shrink-0">
+                    <svg data-encore-id="icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </div>
+                <!-- Teks Menu disembunyikan secara default menggunakan opacity-0 -->
+                <span class="sidebar-text ml-4 text-xs uppercase tracking-[0.15em] font-medium opacity-0 transition-opacity duration-300">Keluar (Logout)</span>
+            </button>
+        </div>
+    </aside>
+</div>
+
+<!-- ============================================== -->
+<!-- BAGIAN MOBILE DRAWER -->
+<!-- ============================================== -->
+<div id="drawerOverlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0" onclick="toggleMobileMenu()"></div>
+
+<aside id="mobileDrawer" class="fixed inset-y-0 left-0 w-3/4 max-w-sm bg-inalum-blue text-white flex flex-col z-50 transform -translate-x-full lg:hidden">
+    <div class="h-16 flex items-center justify-between px-6 border-b border-white/10">
+        <div class="flex items-center gap-3"><img src="/logo-inalum-dashboard.png" alt="INALUM" class="h-8 w-auto"><h1 class="text-xs font-medium tracking-[0.2em] uppercase leading-tight">Menu Navigasi</h1></div>
+        <button onclick="toggleMobileMenu()" class="text-white/50 hover:text-white p-2 -mr-2 text-xl">&times;</button>
+    </div>
+    <nav id="mobile-nav-container" class="flex-1 px-4 py-6 space-y-2 overflow-y-auto"></nav>
+    <div class="p-6 border-t border-white/10"><button id="logoutBtnMobile" class="w-full border border-white/20 text-white py-3 rounded-full transition-colors text-xs uppercase tracking-[0.15em] font-medium hover:bg-white hover:text-inalum-blue">Keluar (Logout)</button></div>
+</aside>

@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistem Manajemen Pemadaman</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/logo-inalum-dashboard.png">
+    <title>Login - Sistem Manajemen Pemadaman INALUM</title>
+    
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="/logo-inalum-dashboard.png">
+    
+    <!-- Memanggil CSS Global yang sudah kita buat sebelumnya (Opsional, tapi direkomendasikan) -->
+    <link rel="stylesheet" href="/css/style.css">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -13,93 +18,129 @@
                 extend: {
                     colors: {
                         background: '#F8FAFC',
+                        'background-soft': '#F1F5F9',
                         foreground: '#0F172A',
+                        muted: '#64748B',
                         border: '#E2E8F0',
                         inalum: {
                             blue: '#0A457F',
-                            bluehover: '#083663'
+                            bluehover: '#083663',
+                            green: '#009A44',
+                            red: '#E31B23'
                         }
                     },
-                    fontFamily: { sans: ['Satoshi', 'sans-serif'] },
-                }
-            }
+                    fontFamily: {
+                        sans: ['Satoshi', 'Inter', '-apple-system', 'sans-serif'],
+                    }
+                },
+            },
         };
     </script>
+    <style>
+        body { -webkit-font-smoothing: antialiased; }
+        input:focus-visible { outline: 2px solid #0A457F; outline-offset: 2px; }
+    </style>
 </head>
-<body class="bg-background text-foreground flex items-center justify-center h-screen p-4">
+<body class="bg-background text-foreground font-sans min-h-screen flex overflow-hidden">
 
-    <div class="bg-white p-8 rounded-3xl border border-border w-full max-w-md shadow-lg">
-        <div class="text-center mb-8 flex flex-col items-center">
-            <img src="/logo-inalum-login.png" alt="Logo INALUM" class="h-12 w-auto mb-4 object-contain">
-            <h1 class="text-2xl font-bold tracking-tight text-inalum-blue">Selamat Datang</h1>
-            <p class="text-sm text-gray-500 mt-2">Masuk ke Dasbor Pemadaman</p>
-        </div>
-
-        <div id="alertMsg" class="hidden text-center text-sm font-medium p-3 rounded-xl mb-4"></div>
-
-        <form id="loginForm" class="space-y-5">
-            <div>
-                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Alamat Email</label>
-                <input type="email" id="email" required class="w-full border border-border p-3 rounded-xl focus:outline-none focus:border-inalum-blue transition-colors" placeholder="nama@email.com">
+    <!-- KIRI: AREA FORM LOGIN (Fokus Utama) -->
+    <div class="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 sm:p-12 z-20 bg-white shadow-[20px_0_40px_rgba(0,0,0,0.05)] relative overflow-y-auto">
+        <div class="w-full max-w-sm space-y-8 animate-[fade-up_0.4s_ease-out]">
+            
+            <!-- Logo & Judul -->
+            <div class="text-center md:text-left">
+                <img src="/logo-inalum-login.png" alt="INALUM" class="h-10 md:h-12 w-auto mx-auto md:mx-0 mb-6">
+                <h2 class="text-3xl font-bold tracking-tight text-inalum-blue">Selamat Datang</h2>
+                <p class="text-xs md:text-sm text-muted mt-2 leading-relaxed">Sistem Manajemen Permohonan Jadwal Pemadaman Listrik (Outage Request)</p>
             </div>
-            <div>
-                <div class="flex justify-between items-center mb-2">
-                    <label class="block text-xs uppercase tracking-widest text-gray-500">Kata Sandi</label>
-                    <a href="/forgot-password.html" class="text-xs font-medium text-inalum-blue hover:underline">Lupa Sandi?</a>
+
+            <!-- Notifikasi Error -->
+            <div id="alertError" class="hidden bg-red-50 text-inalum-red p-4 rounded-xl text-xs border border-red-200 font-medium"></div>
+
+            <!-- Form Autentikasi -->
+            <form id="loginForm" class="space-y-5">
+                <div>
+                    <label class="block text-[10px] uppercase tracking-[0.15em] text-muted mb-1.5 font-bold">Email Pekerja</label>
+                    <input type="email" id="email" required class="w-full border border-border p-3.5 rounded-xl bg-background-soft text-sm focus:outline-none focus:border-inalum-blue focus:bg-white transition-colors" placeholder="nama@inalum.id">
                 </div>
-                <input type="password" id="password" required class="w-full border border-border p-3 rounded-xl focus:outline-none focus:border-inalum-blue transition-colors" placeholder="••••••••">
-            </div>
-            <button type="submit" id="btnSubmit" class="w-full bg-inalum-blue text-white py-3.5 rounded-full text-xs uppercase tracking-widest font-medium hover:bg-inalum-bluehover transition-colors shadow-sm">
-                Masuk
-            </button>
-        </form>
+                
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-[10px] uppercase tracking-[0.15em] text-muted font-bold">Kata Sandi</label>
+                        <a href="/forgot-password.html" class="text-[10px] uppercase tracking-wider text-inalum-blue hover:text-inalum-bluehover hover:underline font-bold transition-colors">Lupa Sandi?</a>
+                    </div>
+                    <input type="password" id="password" required class="w-full border border-border p-3.5 rounded-xl bg-background-soft text-sm focus:outline-none focus:border-inalum-blue focus:bg-white transition-colors" placeholder="••••••••">
+                </div>
+                
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-inalum-blue text-white p-4 rounded-xl font-bold uppercase tracking-[0.15em] text-xs hover:bg-inalum-bluehover transition-transform active:scale-[0.98] shadow-lg shadow-inalum-blue/20">
+                        Masuk ke Dasbor
+                    </button>
+                </div>
+            </form>
 
-        <div class="mt-6 text-center">
-            <p class="text-sm text-gray-500">Belum punya akun? <a href="/register.html" class="text-inalum-blue font-bold hover:underline">Daftar di sini</a></p>
+            <p class="text-center text-xs text-muted mt-8">
+                Belum memiliki akun? <a href="/register.html" class="text-inalum-blue font-bold hover:underline">Daftar di sini</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- KANAN: GAMBAR BENDUNGAN INALUM (Aksen Visual Unobtrusive) -->
+    <div class="hidden lg:block lg:w-1/2 relative bg-inalum-blue overflow-hidden">
+        
+        <!-- Overlay 1: Gradasi biru gelap untuk menyatukan gambar dengan tema -->
+        <div class="absolute inset-0 bg-gradient-to-br from-inalum-blue/90 via-inalum-blue/40 to-transparent z-10 mix-blend-multiply"></div>
+        
+        <!-- Overlay 2: Warna solid transparan untuk meredupkan saturasi (Unobtrusive) -->
+        <div class="absolute inset-0 bg-inalum-blue opacity-40 z-10"></div>
+        
+        <!-- Gambar Bendungan yang direferensikan -->
+        <!-- Efek masking: blur-[3px], contrast-125, saturate-50 untuk menyamarkan piksel pecah -->
+<img src="/TND.png" alt="Fasilitas INALUM" class="absolute inset-0 w-full h-full object-cover object-center scale-110 blur-[3px] contrast-125 saturate-50 animate-[fade-up_1s_ease-out]">
+        <!-- Elemen Dekoratif Khas Enterprise di atas gambar -->
+        <div class="absolute bottom-16 left-16 right-16 z-20 text-white animate-[fade-up_1s_ease-out_0.3s_both]">
+            <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[9px] font-bold uppercase tracking-[0.2em] mb-4 border border-white/20">
+                Infrastruktur Keandalan
+            </span>
+            <h3 class="text-3xl font-medium leading-[1.2] tracking-tight text-white/90 max-w-lg">
+                Menyediakan energi yang andal untuk kelancaran operasional peleburan aluminium.
+            </h3>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedEmail = localStorage.getItem('lastUsedEmail');
-            if (savedEmail) {
-                document.getElementById('email').value = savedEmail;
-                document.getElementById('password').focus(); 
-            }
-        });
-
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('btnSubmit');
-            const alertMsg = document.getElementById('alertMsg');
-            const emailInput = document.getElementById('email').value;
-            const passInput = document.getElementById('password').value;
-
-            btn.innerText = "Memeriksa...";
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = 'MEMPROSES...';
             btn.disabled = true;
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: emailInput, password: passInput })
+                    body: JSON.stringify({ email, password })
                 });
                 const data = await res.json();
-
+                
                 if (res.ok) {
-                    localStorage.setItem('lastUsedEmail', emailInput);
-                    alertMsg.innerText = "Login berhasil, mengarahkan...";
-                    alertMsg.className = "text-center text-sm font-medium p-3 rounded-xl mb-4 bg-green-100 text-green-700 border border-green-200 block";
-                    window.location.href = data.redirect;
+                    window.location.href = data.redirect || '/dashboard';
                 } else {
-                    alertMsg.innerText = data.error;
-                    alertMsg.className = "text-center text-sm font-medium p-3 rounded-xl mb-4 bg-red-100 text-red-700 border border-red-200 block";
+                    const alert = document.getElementById('alertError');
+                    alert.innerText = data.error;
+                    alert.classList.remove('hidden');
+                    btn.innerText = originalText;
+                    btn.disabled = false;
                 }
-            } catch (err) {
-                alertMsg.innerText = "Gagal terhubung ke server.";
-                alertMsg.className = "text-center text-sm font-medium p-3 rounded-xl mb-4 bg-red-100 text-red-700 border border-red-200 block";
-            } finally {
-                btn.innerText = "Masuk";
+            } catch (error) {
+                const alert = document.getElementById('alertError');
+                alert.innerText = 'Gagal terhubung ke server. Pastikan server aktif.';
+                alert.classList.remove('hidden');
+                btn.innerText = originalText;
                 btn.disabled = false;
             }
         });

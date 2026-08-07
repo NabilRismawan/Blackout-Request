@@ -1,50 +1,48 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// Tentukan lokasi file database (otomatis terbuat jika belum ada)
-const dbPath = path.join(__dirname, 'database.sqlite');
-
+const dbPath = path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
-        console.error('❌ Gagal membuka database:', err.message);
+        console.error('Gagal terkoneksi ke database SQLite:', err.message);
     } else {
-        console.log('✅ Terkoneksi ke database SQLite.');
-    }
-});
+        console.log('Terhubung ke database SQLite.');
 
-// Buat tabel jika belum ada (Skema Baru)
-db.serialize(() => {
-    // Tabel Users yang sudah di-update dengan email dan status verifikasi
-    db.run(`
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT,
-                email TEXT UNIQUE,
-                password_hash TEXT,
-                role TEXT,
-                is_verified INTEGER DEFAULT 0,
-                verification_token TEXT,
-                reset_token TEXT,
-                reset_token_expires DATETIME
-            )
-        `);
-    
-    // Tabel Requests (Permohonan)
-    db.run(`
-        CREATE TABLE IF NOT EXISTS requests (
+        // Tabel Users
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL,
+            is_verified INTEGER DEFAULT 0,
+            verification_token TEXT,
+            reset_token TEXT,
+            reset_token_expires DATETIME
+        )`);
+        
+        // Tabel Requests
+        db.run(`CREATE TABLE IF NOT EXISTS requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             departemen TEXT,
             dipersiapkan_oleh TEXT,
-            status TEXT DEFAULT 'Pending',
-            tanggal_pengajuan DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        )
-    `);
+            remark TEXT,
+            surat_to TEXT,
+            butuh_ses INTEGER DEFAULT 0,
+            ses_section TEXT,
+            ses_name TEXT,
+            ses_date DATETIME,
+            status TEXT,
+            pemeriksa_oleh TEXT,
+            pemeriksa_date DATETIME, /* TAMBAHAN BARU */
+            disetujui_oleh TEXT,
+            disetujui_date DATETIME, /* TAMBAHAN BARU */
+            tanggal_pengajuan DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
 
-    // Tabel Outages (Pemadaman)
-    db.run(`
-        CREATE TABLE IF NOT EXISTS outages (
+        // Tabel Outages
+        db.run(`CREATE TABLE IF NOT EXISTS outages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             request_id INTEGER,
             jenis_pemadaman TEXT,
@@ -59,19 +57,17 @@ db.serialize(() => {
             kepala_pelaksana TEXT,
             keterangan TEXT,
             sld_data TEXT,
-            FOREIGN KEY(request_id) REFERENCES requests(id)
-        )
-    `);
+            FOREIGN KEY (request_id) REFERENCES requests (id)
+        )`);
 
-    // Tabel Tasks (Rincian Pekerjaan)
-    db.run(`
-        CREATE TABLE IF NOT EXISTS tasks (
+        // Tabel Tasks
+        db.run(`CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             outage_id INTEGER,
             deskripsi TEXT,
-            FOREIGN KEY(outage_id) REFERENCES outages(id)
-        )
-    `);
+            FOREIGN KEY (outage_id) REFERENCES outages (id)
+        )`);
+    }
 });
 
-module.exports = db;
+module.exports = db;    

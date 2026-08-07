@@ -1,0 +1,83 @@
+/* --- public/css/style.css --- */
+body { -webkit-font-smoothing: antialiased; }
+
+/* Efek grain didorong ke belakang agar tidak mengotori Sidebar dan Header */
+.grain-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    opacity: 0.025; mix-blend-mode: multiply;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 999px; }
+
+a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid #0A457F; outline-offset: 2px;
+}
+
+.hero-halftone {
+    background-image: radial-gradient(circle, rgba(248, 250, 252, 0.5) 1px, transparent 1px);
+    background-size: 5px 5px;
+}
+
+@keyframes blink-cursor {
+    0%, 45% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+.hero-cursor { animation: blink-cursor 1s step-end infinite; }
+
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fade-up-row { animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+#mobileDrawer { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+#mobileDrawer.open { transform: translateX(0); }
+
+/* ========================================================
+   DYNAMIC HOVER SIDEBAR (DOCK MODE)
+======================================================== */
+#Desktop_LeftSidebar_Id {
+    width: 80px; 
+}
+#Desktop_LeftSidebar_Id:hover {
+    width: 280px;
+}
+/* Menampilkan teks dengan efek fade saat dilebarkan */
+#Desktop_LeftSidebar_Id:hover .sidebar-text,
+#Desktop_LeftSidebar_Id:hover .sidebar-logo-text {
+    opacity: 1 !important;
+}
+
+/* --- FITUR CETAK PDF TEMPLATE RESMI INALUM POP --- */
+@media print {
+    @page { size: A4 portrait; margin: 1cm; }
+    html, body {
+        background-color: white !important;
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact;
+        margin: 0; padding: 0;
+    }
+    aside, header, #drawerOverlay, #mobileDrawer, section[id^="view-"], #detailModal, #alertNotification, #popProcessModal {
+        display: none !important;
+    }
+    #printTemplateContainer {
+        display: block !important;
+        position: absolute;
+        left: 0; top: 0;
+        width: 100%;
+        background: white;
+        z-index: 99999;
+    }
+    .print-table th, .print-table td {
+        border: 1px solid black;
+        padding: 4px;
+    }
+    .vertical-text {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        text-align: center;
+        white-space: nowrap;
+    }
+}

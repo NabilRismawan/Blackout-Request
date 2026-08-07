@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!-- <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -65,32 +65,38 @@
         }
         .fade-up-row { animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-        /* Smooth Mobile Drawer Transition */
         #mobileDrawer { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #mobileDrawer.open { transform: translateX(0); }
 
-        /* --- FITUR CETAK PDF TEMPLATE RESMI --- */
+        /* --- FITUR CETAK PDF TEMPLATE RESMI INALUM POP --- */
         @media print {
-            @page { size: A4; margin: 1.5cm; }
+            @page { size: A4 portrait; margin: 1cm; }
             html, body {
                 background-color: white !important;
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact;
                 margin: 0; padding: 0;
             }
-            /* SEMBUNYIKAN SEMUA UI WEBSITE SAAT DICETAK */
-            aside, header, #drawerOverlay, #mobileDrawer, section[id^="view-"], #detailModal, #alertNotification {
+            aside, header, #drawerOverlay, #mobileDrawer, section[id^="view-"], #detailModal, #alertNotification, #popProcessModal {
                 display: none !important;
             }
-            /* TAMPILKAN HANYA TEMPLATE KERTAS KERJA */
             #printTemplateContainer {
                 display: block !important;
                 position: absolute;
-                left: 0;
-                top: 0;
+                left: 0; top: 0;
                 width: 100%;
                 background: white;
                 z-index: 99999;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid black;
+                padding: 4px;
+            }
+            .vertical-text {
+                writing-mode: vertical-rl;
+                transform: rotate(180deg);
+                text-align: center;
+                white-space: nowrap;
             }
         }
     </style>
@@ -98,23 +104,19 @@
 
 <body class="bg-background text-foreground font-sans flex h-screen overflow-hidden">
 
-    <svg class="grain-overlay" aria-hidden="true">
-        <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
-        <rect width="100%" height="100%" filter="url(#grain)" />
-    </svg>
+    <svg class="grain-overlay" aria-hidden="true"><filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter><rect width="100%" height="100%" filter="url(#grain)" /></svg>
 
+    <!-- SIDEBAR -->
     <aside class="w-64 bg-inalum-blue text-white flex-col hidden lg:flex shrink-0">
         <div class="h-16 flex items-center px-6 border-b border-white/10 gap-3">
             <img src="/logo-inalum-dashboard.png" alt="INALUM" class="h-8 w-auto">
-            <h1 class="text-xs font-medium tracking-[0.2em] uppercase leading-tight">
-                Blackout<br />Request
-            </h1>
+            <h1 class="text-xs font-medium tracking-[0.2em] uppercase leading-tight">Blackout<br />Request</h1>
         </div>
         <nav class="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
             <button onclick="showView('overview')" id="nav-overview" class="nav-btn w-full text-left block px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white">Dashboard Overview</button>
             <button onclick="showView('form')" id="nav-form" class="nav-btn w-full text-left block px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white">Buat Permohonan</button>
             <button onclick="showView('history')" id="nav-history" class="nav-btn w-full text-left block px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white">Histori Pengajuan</button>
-            <button onclick="showView('approval')" id="nav-approval" class="nav-btn w-full text-left hidden px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white">Validasi &amp; Approval</button>
+            <button onclick="showView('approval')" id="nav-approval" class="nav-btn w-full text-left hidden px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50 hover:text-white">Panel Validasi</button>
         </nav>
         <div class="p-4 border-t border-white/10">
             <button id="logoutBtn" class="w-full border border-white/20 text-white py-3 md:py-2.5 rounded-full transition-colors text-xs uppercase tracking-[0.15em] font-medium hover:bg-white hover:text-inalum-blue">Keluar (Logout)</button>
@@ -123,12 +125,10 @@
 
     <div id="drawerOverlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0" onclick="toggleMobileMenu()"></div>
 
+    <!-- MOBILE DRAWER -->
     <aside id="mobileDrawer" class="fixed inset-y-0 left-0 w-3/4 max-w-sm bg-inalum-blue text-white flex flex-col z-50 transform -translate-x-full lg:hidden">
         <div class="h-16 flex items-center justify-between px-6 border-b border-white/10">
-            <div class="flex items-center gap-3">
-                <img src="/logo-inalum-dashboard.png" alt="INALUM" class="h-8 w-auto">
-                <h1 class="text-xs font-medium tracking-[0.2em] uppercase leading-tight">Menu Navigasi</h1>
-            </div>
+            <div class="flex items-center gap-3"><img src="/logo-inalum-dashboard.png" alt="INALUM" class="h-8 w-auto"><h1 class="text-xs font-medium tracking-[0.2em] uppercase leading-tight">Menu Navigasi</h1></div>
             <button onclick="toggleMobileMenu()" class="text-white/50 hover:text-white p-2 -mr-2 text-xl">&times;</button>
         </div>
         <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -137,24 +137,14 @@
             <button onclick="showView('history'); toggleMobileMenu()" id="nav-history-mobile" class="nav-btn w-full text-left block px-4 py-3 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50">Histori Pengajuan</button>
             <button onclick="showView('approval'); toggleMobileMenu()" id="nav-approval-mobile" class="nav-btn w-full text-left hidden px-4 py-3 rounded-lg text-xs uppercase tracking-[0.15em] transition-colors text-white/50">Validasi &amp; Approval</button>
         </nav>
-        <div class="p-6 border-t border-white/10">
-            <button id="logoutBtnMobile" class="w-full border border-white/20 text-white py-3 rounded-full transition-colors text-xs uppercase tracking-[0.15em] font-medium hover:bg-white hover:text-inalum-blue">Keluar (Logout)</button>
-        </div>
+        <div class="p-6 border-t border-white/10"><button id="logoutBtnMobile" class="w-full border border-white/20 text-white py-3 rounded-full transition-colors text-xs uppercase tracking-[0.15em] font-medium hover:bg-white hover:text-inalum-blue">Keluar (Logout)</button></div>
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden w-full">
-
+        <!-- HEADER -->
         <header class="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 md:px-6 z-10 shrink-0">
-            <button onclick="toggleMobileMenu()" class="lg:hidden p-2 -ml-2 text-foreground focus:outline-none">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-            </button>
-
-            <div class="flex-1 hidden md:flex items-center justify-center ml-14 ">
-                <img src="/logo-inalum-login.png" 
-                    alt="INALUM" 
-                    class="h-10 md:h-12 w-auto opacity-90 hover:opacity-100 transition-opacity translate-x-10">
-            </div>
-
+            <button onclick="toggleMobileMenu()" class="lg:hidden p-2 -ml-2 text-foreground focus:outline-none"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+            <div class="flex-1 hidden md:flex items-center justify-center ml-14 "><img src="/logo-inalum-login.png" alt="INALUM" class="h-10 md:h-12 w-auto opacity-90 hover:opacity-100 transition-opacity translate-x-10"></div>
             <div class="flex items-center gap-3 ml-auto">
                 <span class="text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted text-right" id="userGreeting">Loading...</span>
                 <div class="w-8 h-8 md:w-9 md:h-9 bg-inalum-blue rounded-full flex items-center justify-center text-white font-medium text-sm shrink-0" id="avatarLetter">U</div>
@@ -164,58 +154,37 @@
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-6 lg:p-10">
             <div id="alertNotification" class="max-w-5xl mx-auto hidden mb-6 p-4 rounded-xl text-sm text-center font-medium border"></div>
 
+            <!-- DASHBOARD VIEW -->
             <section id="view-overview" class="max-w-5xl mx-auto space-y-6 hidden w-full">
                 <div class="relative overflow-hidden rounded-3xl bg-inalum-blue text-white min-h-[280px] md:min-h-[380px] flex flex-col justify-between p-6 md:p-10 lg:p-12 w-full">
                     <img src="https://images.unsplash.com/photo-1693013112835-5f3128bb555f?fm=jpg&q=60&w=1600&auto=format&fit=crop" alt="" class="absolute inset-0 h-full w-full object-cover opacity-40 grayscale mix-blend-luminosity" />
                     <div class="hero-halftone absolute inset-0"></div>
                     <div class="absolute inset-0 bg-gradient-to-t from-inalum-blue via-inalum-blue/70 to-inalum-blue/30"></div>
-
                     <div class="relative z-10 flex items-start justify-between">
-                        <span class="inline-flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-[0.2em] text-white/100">
-                            <span class="h-1.5 w-1.5 rounded-full bg-inalum-green animate-pulse"></span>Sistem Aktif
-                        </span>
+                        <span class="inline-flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-[0.2em] text-white/100"><span class="h-1.5 w-1.5 rounded-full bg-inalum-green animate-pulse"></span>Sistem Aktif</span>
                         <span id="heroClock" class="text-[10px] md:text-[11px] uppercase tracking-[0.2em] text-white/100 text-right max-w-[50%]"></span>
                     </div>
-
                     <div class="relative z-10 mt-10 md:mt-0">
                         <span class="block text-[10px] md:text-xs uppercase tracking-[0.2em] text-white/60 mb-2 md:mb-3" id="heroGreeting">Selamat Datang</span>
-                        <h2 class="text-3xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.1]">
-                            <span id="heroTypedText"></span><span class="hero-cursor inline-block w-[2px] md:w-[3px] h-[0.85em] bg-white align-middle ml-1"></span>
-                        </h2>
+                        <h2 class="text-3xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.1]"><span id="heroTypedText"></span><span class="hero-cursor inline-block w-[2px] md:w-[3px] h-[0.85em] bg-white align-middle ml-1"></span></h2>
                         <p class="mt-3 md:mt-4 max-w-md text-xs md:text-sm text-white/70">Pantau, ajukan, dan validasi jadwal pemadaman dari satu tempat.</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg">
-                        <p class="text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2">Total Pengajuan</p>
-                        <p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-total" data-value="0">0</p>
-                    </div>
-                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg">
-                        <p class="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2"><span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>Menunggu</p>
-                        <p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-pending" data-value="0">0</p>
-                    </div>
-                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg">
-                        <p class="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-green shrink-0"></span>Disetujui</p>
-                        <p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-approved" data-value="0">0</p>
-                    </div>
-                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg">
-                        <p class="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-red shrink-0"></span>Ditolak</p>
-                        <p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-rejected" data-value="0">0</p>
-                    </div>
+                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg"><p class="text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2">Total Pengajuan</p><p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-total" data-value="0">0</p></div>
+                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg"><p class="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2"><span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>Menunggu</p><p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-pending" data-value="0">0</p></div>
+                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg"><p class="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-green shrink-0"></span>Disetujui</p><p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-approved" data-value="0">0</p></div>
+                    <div class="stat-card bg-white p-5 md:p-6 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-lg"><p class="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-red shrink-0"></span>Ditolak</p><p class="text-3xl md:text-4xl font-medium tracking-tight text-inalum-blue" id="stat-rejected" data-value="0">0</p></div>
                 </div>
 
                 <div class="bg-white rounded-2xl border border-border overflow-hidden w-full">
-                    <div class="flex items-center justify-between p-4 md:p-6 border-b border-border">
-                        <h3 class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Aktivitas Terbaru</h3>
-                        <button onclick="showView('history')" class="text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-inalum-blue font-bold hover:underline p-2 -mr-2">Lihat Semua &rarr;</button>
-                    </div>
-                    <div id="recentActivityList" class="divide-y divide-border">
-                        <p class="p-6 text-sm text-muted italic text-center md:text-left">Memuat aktivitas...</p>
-                    </div>
+                    <div class="flex items-center justify-between p-4 md:p-6 border-b border-border"><h3 class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Aktivitas Terbaru</h3><button onclick="showView('history')" class="text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-inalum-blue font-bold hover:underline p-2 -mr-2">Lihat Semua &rarr;</button></div>
+                    <div id="recentActivityList" class="divide-y divide-border"><p class="p-6 text-sm text-muted italic text-center md:text-left">Memuat aktivitas...</p></div>
                 </div>
             </section>
 
+            <!-- FORM VIEW -->
             <section id="view-form" class="max-w-5xl mx-auto hidden w-full">
                 <div class="bg-white p-5 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl border border-border">
                     <div class="mb-6 md:mb-8 border-b border-border pb-4 md:pb-6">
@@ -228,6 +197,10 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <div><label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Departemen Pemohon</label><input type="text" id="form-dept" required class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
                                 <div><label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Dipersiapkan Oleh (Nama)</label><input type="text" id="form-preby" required class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors"></div>
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-muted mb-1.5 md:mb-2">Catatan Tambahan (Remark)</label>
+                                    <textarea id="form-remark" rows="2" class="w-full border border-border p-3 md:p-2.5 rounded-xl md:rounded-lg bg-white text-sm focus:outline-none focus:border-inalum-blue transition-colors" placeholder="Ketik catatan keseluruhan pemadaman di sini (Opsional)..."></textarea>
+                                </div>
                             </div>
                         </div>
 
@@ -310,16 +283,12 @@
                 </div>
             </section>
 
+            <!-- HISTORY VIEW -->
             <section id="view-history" class="max-w-5xl mx-auto hidden space-y-4 md:space-y-6 w-full">
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-inalum-blue">Histori Pengajuan</h2>
-                        <span class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Arsip Keseluruhan</span>
-                    </div>
+                    <div><h2 class="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-inalum-blue">Histori Pengajuan</h2><span class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Arsip Keseluruhan</span></div>
                     <div class="flex items-center gap-2 bg-white border border-border p-1.5 rounded-xl shadow-sm shrink-0">
-                        <span class="pl-2 text-muted">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </span>
+                        <span class="pl-2 text-muted"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></span>
                         <input type="date" id="historyDateFilter" onchange="loadDataFromServer()" class="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer">
                         <button onclick="document.getElementById('historyDateFilter').value=''; loadDataFromServer()" class="px-2 py-1 bg-background-soft text-[10px] uppercase tracking-wider rounded-lg hover:bg-border transition-colors">Reset</button>
                     </div>
@@ -343,16 +312,12 @@
                 </div>
             </section>
 
+            <!-- APPROVAL VIEW -->
             <section id="view-approval" class="max-w-5xl mx-auto hidden space-y-4 md:space-y-6 w-full">
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-inalum-blue" id="approvalPanelTitle">Panel Validasi Pengajuan</h2>
-                        <span class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Aksi Diperlukan</span>
-                    </div>
+                    <div><h2 class="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-inalum-blue" id="approvalPanelTitle">Panel Validasi Pengajuan</h2><span class="text-[10px] md:text-xs uppercase tracking-[0.2em] text-muted">Aksi Diperlukan</span></div>
                     <div class="flex items-center gap-2 bg-white border border-border p-1.5 rounded-xl shadow-sm shrink-0">
-                        <span class="pl-2 text-muted">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </span>
+                        <span class="pl-2 text-muted"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></span>
                         <input type="date" id="approvalDateFilter" onchange="loadDataFromServer()" class="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer">
                         <button onclick="document.getElementById('approvalDateFilter').value=''; loadDataFromServer()" class="px-2 py-1 bg-background-soft text-[10px] uppercase tracking-wider rounded-lg hover:bg-border transition-colors">Reset</button>
                     </div>
@@ -375,28 +340,48 @@
                 </div>
             </section>
 
+            <!-- MODAL DETAIL -->
             <div id="detailModal" class="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-50 hidden flex flex-col items-center justify-end md:justify-center p-0 md:p-4 transition-all">
-                <div class="bg-background w-full h-[90vh] md:h-auto md:max-h-[90vh] md:max-w-4xl rounded-t-3xl md:rounded-3xl border border-border flex flex-col overflow-hidden shadow-2xl animate-[fade-up_0.3s_ease-out]">
+                <div class="bg-background w-full h-[90vh] md:h-auto md:max-h-[90vh] md:max-w-5xl rounded-t-3xl md:rounded-3xl border border-border flex flex-col overflow-hidden shadow-2xl animate-[fade-up_0.3s_ease-out]">
                     <div class="w-full flex justify-center pt-3 pb-1 md:hidden bg-white"><div class="w-12 h-1.5 bg-border rounded-full"></div></div>
-                    
                     <div class="p-4 md:p-6 border-b border-border flex justify-between items-center bg-white shrink-0">
                         <h3 class="text-lg md:text-xl font-medium tracking-tight text-inalum-blue truncate mr-4" id="modalTitle">Detail Permohonan</h3>
                         <button onclick="closeDetailModal()" class="text-muted hover:text-inalum-red text-3xl leading-none transition-colors p-2 -m-2" aria-label="Tutup">&times;</button>
                     </div>
-                    <div class="p-4 md:p-8 overflow-y-auto flex-1 bg-background overscroll-contain" id="modalContent">
-                    </div>
+                    <div class="p-4 md:p-8 overflow-y-auto flex-1 bg-background overscroll-contain" id="modalContent"></div>
                     <div class="p-4 md:p-5 border-t border-border flex justify-end gap-3 bg-white shrink-0">
-                        <button id="btnPrintPDF" onclick="window.print()" class="hidden w-full md:w-auto bg-inalum-green text-white px-6 py-3 md:py-2.5 rounded-full font-medium uppercase tracking-[0.15em] text-[10px] md:text-xs hover:bg-inalum-green/90 transition-colors shadow-sm">
-                            Cetak PDF
-                        </button>
+                        <button id="btnPrintPDF" onclick="window.print()" class="hidden w-full md:w-auto bg-inalum-green text-white px-6 py-3 md:py-2.5 rounded-full font-medium uppercase tracking-[0.15em] text-[10px] md:text-xs hover:bg-inalum-green/90 transition-colors shadow-sm">Cetak Surat Balasan POP (PDF)</button>
                         <button onclick="closeDetailModal()" class="w-full md:w-auto border border-border text-foreground px-6 py-3 md:py-2.5 rounded-full font-medium uppercase tracking-[0.15em] text-[10px] md:text-xs hover:bg-gray-100 transition-colors">Tutup Dokumen</button>
                     </div>
                 </div>
             </div>
 
+            <!-- KODE BARU: KONTAINER TEMPLATE CETAK RESMI (APPROVAL OF OUTAGE WORK POP-FR18-001/0) -->
             <div id="printTemplateContainer" class="hidden"></div>
 
         </main>
+    </div>
+
+    <!-- MODAL PROSES POP (Disederhanakan Tanpa SES) -->
+    <div id="popProcessModal" class="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-[60] hidden flex flex-col items-center justify-center p-4 transition-all">
+        <div class="bg-white w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl animate-[fade-up_0.2s_ease-out]">
+            <h3 class="text-xl md:text-2xl font-bold text-inalum-blue mb-2">Proses Dokumen (Divisi POP)</h3>
+            <p class="text-xs text-gray-500 mb-6">Lengkapi data konfirmasi sebelum menyetujui dokumen ini.</p>
+            
+            <form id="popProcessForm" onsubmit="submitPopProcess(event)">
+                <input type="hidden" id="pop_req_id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] md:text-xs uppercase tracking-[0.15em] text-gray-500 mb-1.5">Tujuan Surat (To:)</label>
+                        <input type="text" id="pop_surat_to" required class="w-full border border-border p-3 rounded-xl text-sm focus:outline-none focus:border-inalum-blue" placeholder="Contoh: PMN, POT, PME">
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end gap-3">
+                    <button type="button" onclick="closePopProcessModal()" class="px-5 py-2.5 border border-border rounded-full text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] text-gray-500 hover:bg-gray-100 transition-colors">Batal</button>
+                    <button type="submit" class="px-6 py-2.5 bg-inalum-blue hover:bg-inalum-bluehover text-white rounded-full text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] transition-colors shadow-sm">Proses & Kirim</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -418,24 +403,17 @@
         }
 
         const heroPhrases = ['Kelola Pemadaman.', 'Rencanakan Presisi.', 'Pantau Setiap Proses.'];
-        let heroPhraseIndex = 0;
-        let heroCharIndex = 0;
-        let heroDeleting = false;
-
+        let heroPhraseIndex = 0; let heroCharIndex = 0; let heroDeleting = false;
         function tickHeroTyping() {
             const el = document.getElementById('heroTypedText');
             if (!el) return;
             const current = heroPhrases[heroPhraseIndex];
-
             if (!heroDeleting && heroCharIndex === current.length) {
-                setTimeout(() => { heroDeleting = true; tickHeroTyping(); }, 1600);
-                return;
+                setTimeout(() => { heroDeleting = true; tickHeroTyping(); }, 1600); return;
             }
             if (heroDeleting && heroCharIndex === 0) {
-                heroDeleting = false;
-                heroPhraseIndex = (heroPhraseIndex + 1) % heroPhrases.length;
+                heroDeleting = false; heroPhraseIndex = (heroPhraseIndex + 1) % heroPhrases.length;
             }
-
             heroCharIndex += heroDeleting ? -1 : 1;
             el.textContent = current.slice(0, heroCharIndex);
             setTimeout(tickHeroTyping, heroDeleting ? 35 : 75);
@@ -448,24 +426,20 @@
             const options = isMobile ? { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' } : { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' };
             el.textContent = new Date().toLocaleString('id-ID', options).replace('pukul', '|');
         }
-        setInterval(tickHeroClock, 1000);
-        tickHeroClock();
-        tickHeroTyping();
+        setInterval(tickHeroClock, 1000); tickHeroClock(); tickHeroTyping();
 
         function animateCountUp(id, target) {
             const el = document.getElementById(id);
             if (!el) return;
             const from = parseInt(el.dataset.value || '0', 10);
             if (from === target) { el.textContent = target; return; }
-            const duration = 600;
-            const start = performance.now();
+            const duration = 600; const start = performance.now();
             function frame(now) {
                 const progress = Math.min((now - start) / duration, 1);
                 const eased = 1 - Math.pow(1 - progress, 4);
                 const value = Math.round(from + (target - from) * eased);
                 el.textContent = value;
-                if (progress < 1) requestAnimationFrame(frame);
-                else el.dataset.value = target;
+                if (progress < 1) requestAnimationFrame(frame); else el.dataset.value = target;
             }
             requestAnimationFrame(frame);
         }
@@ -485,8 +459,7 @@
             const el = document.getElementById('recentActivityList');
             if (!el) return;
             if (!listData.length) {
-                el.innerHTML = '<p class="p-6 text-sm text-muted italic text-center md:text-left">Belum ada pengajuan.</p>';
-                return;
+                el.innerHTML = '<p class="p-6 text-sm text-muted italic text-center md:text-left">Belum ada pengajuan.</p>'; return;
             }
             const recent = [...listData].sort((a, b) => new Date(b.tanggal_pengajuan) - new Date(a.tanggal_pengajuan)).slice(0, 5);
             el.innerHTML = recent.map((d, i) => `
@@ -521,12 +494,17 @@
                 document.getElementById('userGreeting').innerText = `${user.username} (${user.role})`;
                 document.getElementById('avatarLetter').innerText = user.username[0].toUpperCase();
 
-                if(currentRole === 'pemeriksa' || currentRole === 'penyetuju') {
+                if(['pemeriksa', 'penyetuju'].includes(currentRole)) {
                     document.getElementById('nav-approval').classList.remove('hidden');
-                    document.getElementById('nav-approval').innerText = currentRole === 'pemeriksa' ? 'Validasi Pemeriksa' : 'Persetujuan Final';
                     document.getElementById('nav-approval-mobile').classList.remove('hidden');
-                    document.getElementById('nav-approval-mobile').innerText = currentRole === 'pemeriksa' ? 'Validasi Pemeriksa' : 'Persetujuan Final';
-                    document.getElementById('approvalPanelTitle').innerText = currentRole === 'pemeriksa' ? 'Panel Validasi (Pemeriksa)' : 'Panel Persetujuan (Manajer)';
+                    
+                    let title = 'Panel Validasi';
+                    if(currentRole === 'pemeriksa') title = 'Panel Pemeriksa POP';
+                    if(currentRole === 'penyetuju') title = 'Panel Persetujuan POP';
+                    
+                    document.getElementById('nav-approval').innerText = title;
+                    document.getElementById('nav-approval-mobile').innerText = title;
+                    document.getElementById('approvalPanelTitle').innerText = title;
                 }
 
                 initCanvasForOutage(document.querySelector('.outage-block'));
@@ -548,19 +526,16 @@
             
             const activeNav = document.getElementById(`nav-${viewName}`);
             if(activeNav) activeNav.className = "nav-btn w-full text-left block px-4 py-3 md:py-2.5 rounded-lg text-xs uppercase tracking-[0.15em] font-bold bg-white text-inalum-blue transition-colors";
-            
             const activeMobileNav = document.getElementById(`nav-${viewName}-mobile`);
             if(activeMobileNav) activeMobileNav.className = "nav-btn w-full text-left block px-4 py-3 rounded-lg text-xs uppercase tracking-[0.15em] font-bold bg-white text-inalum-blue transition-colors";
 
-            if(['overview', 'history', 'approval'].includes(viewName)) {
-                loadDataFromServer();
-            }
+            if(['overview', 'history', 'approval'].includes(viewName)) loadDataFromServer();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function statusDot(status) {
             if(status === 'Disetujui' || status === 'Approved') return 'bg-inalum-green';
-            if(status === 'Diperiksa') return 'bg-inalum-blue';
+            if(status === 'Diperiksa POP') return 'bg-inalum-blue';
             if(status === 'Ditolak' || status === 'Rejected') return 'bg-inalum-red';
             return 'bg-amber-500';
         }
@@ -582,21 +557,12 @@
 
                 const historyFilter = document.getElementById('historyDateFilter')?.value;
                 const approvalFilter = document.getElementById('approvalDateFilter')?.value;
-
-                const getLocalDateString = (utcDateStr) => {
-                    const d = new Date(utcDateStr);
-                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                };
+                const getLocalDateString = (utcDateStr) => { const d = new Date(utcDateStr); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
                 let historyData = listData;
-                if (historyFilter) {
-                    historyData = historyData.filter(d => getLocalDateString(d.tanggal_pengajuan) === historyFilter);
-                }
-
+                if (historyFilter) historyData = historyData.filter(d => getLocalDateString(d.tanggal_pengajuan) === historyFilter);
                 let approvalData = listData;
-                if (approvalFilter) {
-                    approvalData = approvalData.filter(d => getLocalDateString(d.tanggal_pengajuan) === approvalFilter);
-                }
+                if (approvalFilter) approvalData = approvalData.filter(d => getLocalDateString(d.tanggal_pengajuan) === approvalFilter);
 
                 const tbodyHistory = document.getElementById('historyTableBody');
                 if (historyData.length === 0) {
@@ -614,23 +580,22 @@
                     `).join('');
                 }
 
-                if(currentRole === 'pemeriksa' || currentRole === 'penyetuju') {
+                if(['pemeriksa', 'penyetuju'].includes(currentRole)) {
                     const tbodyApproval = document.getElementById('approvalTableBody');
                     if (approvalData.length === 0) {
                         tbodyApproval.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-muted italic">Tidak ada dokumen yang perlu divalidasi pada tanggal tersebut.</td></tr>`;
                     } else {
                         tbodyApproval.innerHTML = approvalData.map(d => {
-                            let actionButtons = `<span class="text-[10px] md:text-xs text-muted italic whitespace-nowrap">Tidak ada aksi tersedia</span>`;
+                            let actionButtons = `<span class="text-[10px] md:text-xs text-muted italic whitespace-nowrap">Menunggu Tahap Lain</span>`;
 
                             if (currentRole === 'pemeriksa' && d.status === 'Pending') {
                                 actionButtons = `
-                                    <button onclick="updateStatus(${d.id}, 'Diperiksa')" class="bg-inalum-blue text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-bluehover transition-transform active:scale-95 whitespace-nowrap">Tandai Diperiksa</button>
-                                    <button onclick="updateStatus(${d.id}, 'Ditolak')" class="border border-inalum-red text-inalum-red px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-red hover:text-white transition-transform active:scale-95 whitespace-nowrap">Tolak</button>
+                                    <button onclick="openPopProcessModal(${d.id})" class="bg-inalum-blue text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-bluehover transition-transform active:scale-95 whitespace-nowrap">Proses Dokumen</button>
                                 `;
-                            } else if (currentRole === 'penyetuju' && d.status === 'Diperiksa') {
+                            } else if (currentRole === 'penyetuju' && d.status === 'Diperiksa POP') {
                                 actionButtons = `
                                     <button onclick="updateStatus(${d.id}, 'Disetujui')" class="bg-inalum-green text-white px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-green/90 transition-transform active:scale-95 whitespace-nowrap">Ya, Setuju</button>
-                                    <button onclick="updateStatus(${d.id}, 'Ditolak')" class="border border-inalum-red text-inalum-red px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-red hover:text-white transition-transform active:scale-95 whitespace-nowrap">Tidak (Tolak)</button>
+                                    <button onclick="updateStatus(${d.id}, 'Ditolak')" class="border border-inalum-red text-inalum-red px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-inalum-red hover:text-white transition-transform active:scale-95 whitespace-nowrap">Tolak</button>
                                 `;
                             }
 
@@ -641,8 +606,8 @@
                                 <td class="p-3 md:p-4">${d.departemen}</td>
                                 <td class="p-3 md:p-4">${statusBadge(d.status)}</td>
                                 <td class="p-3 md:p-4 text-right">
-                                    <div class="flex flex-wrap justify-end gap-2">
-                                        <button onclick="openDetailModal(${d.id})" class="bg-white border border-border px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-background-soft transition-colors whitespace-nowrap">Lihat Dokumen</button>
+                                    <div class="flex flex-wrap justify-end items-center gap-2">
+                                        <button onclick="openDetailModal(${d.id})" class="bg-white border border-border px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-background-soft transition-colors whitespace-nowrap">Lihat</button>
                                         ${actionButtons}
                                     </div>
                                 </td>
@@ -650,6 +615,41 @@
                             `;
                         }).join('');
                     }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function openPopProcessModal(id) {
+            document.getElementById('pop_req_id').value = id;
+            document.getElementById('popProcessModal').classList.remove('hidden');
+        }
+        function closePopProcessModal() {
+            document.getElementById('popProcessModal').classList.add('hidden');
+        }
+
+        async function submitPopProcess(e) {
+            e.preventDefault();
+            const id = document.getElementById('pop_req_id').value;
+            const surat_to = document.getElementById('pop_surat_to').value;
+            const butuh_ses = false; 
+            const ses_section = '';
+            const ses_name = '';
+            const ses_date = '';
+
+            const status = 'Diperiksa POP';
+
+            if(!confirm(`Apakah Anda yakin ingin memproses dokumen ini menjadi status "${status}"?`)) return;
+
+            try {
+                const res = await fetch(`/api/requests/${id}/status`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ status, surat_to, butuh_ses, ses_section, ses_name, ses_date })
+                });
+                if(res.ok) {
+                    closePopProcessModal();
+                    showNotification('Dokumen berhasil diproses!', 'bg-background-soft text-inalum-blue border-border');
+                    loadDataFromServer();
                 }
             } catch(e) { console.error(e); }
         }
@@ -684,6 +684,7 @@
             const payload = {
                 departemen_pemohon: document.getElementById('form-dept').value,
                 dipersiapkan_oleh: document.getElementById('form-preby').value,
+                remark: document.getElementById('form-remark').value,
                 outages: []
             };
 
@@ -756,27 +757,26 @@
 
                 document.getElementById('modalTitle').innerText = `Detail Pengajuan #${id}`;
 
-                // HELPER: Format Tanggal dan Jam
-                const formatDate = (dateStr) => {
+                // HELPER TANGGAL & JAM UNTUK MODAL WEB
+                const formatDateWeb = (dateStr) => {
+                    if(!dateStr) return '-';
                     return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
                 };
-                const formatTime = (dateStr) => {
+                const formatTimeWeb = (dateStr) => {
+                    if(!dateStr) return '-';
                     return new Date(dateStr).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
                 };
 
-                // VARIABEL SEMENTARA: Nama Pemeriksa & Penyetuju
-                // (Jika backend belum menyimpan siapa yang menyetujui, kita gunakan placeholder yang jelas)
                 const namaPemeriksa = data.request.pemeriksa_oleh || '<span class="text-gray-400 italic">Menunggu...</span>';
                 const namaPenyetuju = data.request.disetujui_oleh || '<span class="text-gray-400 italic">Menunggu...</span>';
 
                 // --- TAMPILAN MODAL UI (DI WEB) ---
                 let contentHTML = `
-                    <div class="bg-white p-4 md:p-6 rounded-2xl border border-border mb-4 md:mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 shadow-sm">
+                    <div class="bg-white p-4 md:p-6 rounded-2xl border border-border mb-4 md:mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 shadow-sm">
                         <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Dibuat Oleh</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${data.request.username}</span></div>
                         <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Departemen</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${data.request.departemen}</span></div>
-                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">PIC Pemohon</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${data.request.dipersiapkan_oleh}</span></div>
-                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Pemeriksa</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${namaPemeriksa}</span></div>
-                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Penyetuju</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${namaPenyetuju}</span></div>
+                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Pemeriksa (POP)</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${namaPemeriksa}</span></div>
+                        <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Penyetuju (POP)</span><span class="text-xs md:text-sm font-medium text-inalum-blue">${namaPenyetuju}</span></div>
                         <div class="col-span-2 md:col-span-1"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Status</span>${statusBadge(data.request.status)}</div>
                     </div>
                 `;
@@ -800,38 +800,31 @@
                                             <thead>
                                                 <tr class="text-muted border-b border-border">
                                                     <th class="py-2 font-medium">Keterangan</th>
-                                                    <th class="py-2 font-medium">Dari Tanggal</th>
-                                                    <th class="py-2 font-medium">Jam</th>
-                                                    <th class="py-2 font-medium">Sampai Tanggal</th>
-                                                    <th class="py-2 font-medium">Jam</th>
+                                                    <th class="py-2 font-medium">Dari (Jam, Tanggal)</th>
+                                                    <th class="py-2 font-medium">Sampai (Jam, Tanggal)</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr class="border-b border-border/50">
                                                     <td class="py-2 font-medium flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-green shrink-0"></span>Kerja</td>
-                                                    <td class="py-2">${formatDate(out.waktu_kerja_mulai)}</td>
-                                                    <td class="py-2">${formatTime(out.waktu_kerja_mulai)}</td>
-                                                    <td class="py-2">${formatDate(out.waktu_kerja_selesai)}</td>
-                                                    <td class="py-2">${formatTime(out.waktu_kerja_selesai)}</td>
+                                                    <td class="py-2">${formatTimeWeb(out.waktu_kerja_mulai)}, ${formatDateWeb(out.waktu_kerja_mulai)}</td>
+                                                    <td class="py-2">${formatTimeWeb(out.waktu_kerja_selesai)}, ${formatDateWeb(out.waktu_kerja_selesai)}</td>
                                                 </tr>
                                                 <tr>
                                                     <td class="py-2 font-medium flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-inalum-red shrink-0"></span>Padam</td>
-                                                    <td class="py-2 text-inalum-red font-medium">${formatDate(out.waktu_padam_mulai)}</td>
-                                                    <td class="py-2 text-inalum-red font-medium">${formatTime(out.waktu_padam_mulai)}</td>
-                                                    <td class="py-2 text-inalum-red font-medium">${formatDate(out.waktu_padam_selesai)}</td>
-                                                    <td class="py-2 text-inalum-red font-medium">${formatTime(out.waktu_padam_selesai)}</td>
+                                                    <td class="py-2 text-inalum-red font-medium">${formatTimeWeb(out.waktu_padam_mulai)}, ${formatDateWeb(out.waktu_padam_mulai)}</td>
+                                                    <td class="py-2 text-inalum-red font-medium">${formatTimeWeb(out.waktu_padam_selesai)}, ${formatDateWeb(out.waktu_padam_selesai)}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
 
-                                <div class="col-span-1 md:col-span-2 grid grid-cols-2 gap-3 mt-2">
+                                <div class="col-span-1 md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3 mt-2 border-b border-border pb-4">
                                     <div><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Titik Pentahanan</span>${out.titik_pentahanan || '-'}</div>
                                     <div><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Komunikasi</span>${out.komunikasi || '-'}</div>
+                                    <div class="md:col-span-2"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Keterangan Tambahan</span>${out.keterangan || '-'}</div>
                                 </div>
-                                
-                                ${out.keterangan ? `<div class="col-span-1 md:col-span-2 mt-2 pt-3 border-t border-border"><span class="block text-[9px] md:text-[10px] uppercase tracking-[0.15em] text-muted mb-1">Keterangan Tambahan</span>${out.keterangan}</div>` : ''}
                             </div>
 
                             <div class="mb-6">
@@ -861,105 +854,189 @@
                 document.getElementById('detailModal').classList.remove('hidden');
 
 
-                // --- GENERATE TEMPLATE CETAK RESMI (FORMULIR PDF) ---
-                const namaPemeriksaPDF = data.request.pemeriksa_oleh || '(..................................)';
-                const namaPenyetujuPDF = data.request.disetujui_oleh || '(..................................)';
+                // --- GENERATE TEMPLATE CETAK RESMI (APPROVAL OF OUTAGE WORK POP-FR18-001/0) ---
+                
+                // Helper Tanggal & Waktu Khusus Print Template
+                const formatPrintDate = (dStr) => {
+                    if(!dStr) return '-';
+                    const d = new Date(dStr);
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2,'0')}, ${d.getFullYear()}`;
+                };
+                const formatPrintTime = (dStr) => {
+                    if(!dStr) return '-';
+                    const d = new Date(dStr);
+                    return `${String(d.getHours()).padStart(2,'0')} : ${String(d.getMinutes()).padStart(2,'0')}`;
+                };
+                const formatPrintDateRange = (mulaiStr, selesaiStr) => {
+                    if(!mulaiStr || !selesaiStr) return '-';
+                    const m = new Date(mulaiStr); const s = new Date(selesaiStr);
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    if(m.getMonth() === s.getMonth() && m.getFullYear() === s.getFullYear()) {
+                        return `${months[m.getMonth()]} ${String(m.getDate()).padStart(2,'0')} ~ ${String(s.getDate()).padStart(2,'0')}, ${m.getFullYear()}`;
+                    }
+                    return `${formatPrintDate(m)} ~ ${formatPrintDate(s)}`;
+                };
+
+                const namaPemeriksaPDF = data.request.pemeriksa_oleh || '-';
+                const namaPenyetujuPDF = data.request.disetujui_oleh || '-';
 
                 let printHTML = `
-                    <div style="font-family: Arial, sans-serif; color: black;">
-                        <table style="width: 100%; border-collapse: collapse; border: 2px solid black; margin-bottom: 20px;">
+                    <div style="font-family: Arial, sans-serif; color: black; font-size: 10px; width: 100%;">
+                        
+                        <!-- HEADER KOP -->
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
                             <tr>
-                                <td style="width: 25%; padding: 10px; border-right: 2px solid black; text-align: center;">
-                                    <img src="/logo-inalum-login.png" alt="INALUM" style="max-height: 60px;">
+                                <td style="width: 33%; vertical-align: top; text-align: left;">
+                                    To &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${data.request.surat_to || '-'}<br>
+                                    FROM : POP
                                 </td>
-                                <td style="width: 75%; padding: 10px; text-align: center;">
-                                    <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">FORMULIR PERMOHONAN JADWAL PEMADAMAN</h2>
-                                    <p style="margin: 5px 0 0 0; font-size: 12px;">PT Indonesia Asahan Aluminium</p>
+                                <td style="width: 34%; text-align: center; vertical-align: top;">
+                                    <img src="/logo-inalum-login.png" style="height: 35px; object-fit: contain;">
+                                </td>
+                                <td style="width: 33%; text-align: right; vertical-align: top;">
+                                    <table style="border-collapse: collapse; border: 1px solid black; float: right; text-align: center; margin-bottom: 5px;">
+                                        <tr><td style="border: 1px solid black; padding: 2px 5px; font-size: 8px;">No. Dokumen / Revisi</td></tr>
+                                        <tr><td style="border: 1px solid black; padding: 2px 5px; font-weight: bold;">POP-FR18-001 / 0</td></tr>
+                                    </table>
+                                    <div style="clear: both;"></div>
+                                    No. : OW/TE/${data.request.id}/${new Date().getFullYear()}<br>
+                                    DATE OF ISSUED : ${formatPrintDate(new Date())}
                                 </td>
                             </tr>
                         </table>
 
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px;">
-                            <tr>
-                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">ID Pengajuan</td>
-                                <td style="padding: 6px; border: 1px solid black; width: 25%;">#${data.request.id}</td>
-                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">Status</td>
-                                <td style="padding: 6px; border: 1px solid black; width: 25%;">${data.request.status}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Departemen</td>
-                                <td style="padding: 6px; border: 1px solid black;">${data.request.departemen}</td>
-                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Tanggal Pengajuan</td>
-                                <td style="padding: 6px; border: 1px solid black;">${formatDate(data.request.tanggal_pengajuan)} ${formatTime(data.request.tanggal_pengajuan)}</td>
-                            </tr>
-                        </table>
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <div style="font-size: 16px; font-weight: bold; margin-bottom: 3px;">PT INDONESIA ASAHAN ALUMINIUM</div>
+                            <div style="font-size: 14px; font-weight: bold; text-decoration: underline;">APPROVAL OF OUTAGE WORK</div>
+                        </div>
+
+                        <!-- TABLE 1: SUMMARY OF OUTAGE -->
+                        <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: center; margin-bottom: 15px;">
+                            <thead style="background-color: #f0f0f0;">
+                                <tr>
+                                    <th rowspan="2">OUTAGE<br>NO</th>
+                                    <th rowspan="2">REQUEST<br>DATE</th>
+                                    <th colspan="2">REQUESTER</th>
+                                    <th rowspan="2">WORKING<br>DATE</th>
+                                    <th rowspan="2">Kind Of Outage</th>
+                                    <th rowspan="2">OUTAGE AREA</th>
+                                    <th rowspan="2">OUTAGE TIME</th>
+                                    <th rowspan="2">WORKING TIME</th>
+                                    <th rowspan="2">WORKING CHIEF</th>
+                                </tr>
+                                <tr>
+                                    <th>SECT.</th>
+                                    <th>P. Incharge</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                 `;
 
-                // Variabel terpisah untuk menampung gambar SLD agar diletakkan di halaman paling akhir
-                let sldAttachmentsHTML = '';
-
-                // RINCIAN PEMADAMAN
                 data.outages.forEach((out, index) => {
                     printHTML += `
-                        <h3 style="font-size: 14px; margin-bottom: 5px; border-bottom: 1px solid black; padding-bottom: 3px;">Pemadaman ${index + 1}: ${out.jenis_pemadaman}</h3>
-                        
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; text-align: left;">
-                            <tr>
-                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Pelaksanaan</th>
-                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Dari Tanggal</th>
-                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Jam</th>
-                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Sampai Tanggal</th>
-                                <th style="padding: 6px; border: 1px solid black; width: 20%; background-color: #f3f4f6;">Jam</th>
-                            </tr>
-                            <tr>
-                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Jadwal Kerja</td>
-                                <td style="padding: 6px; border: 1px solid black;">${formatDate(out.waktu_kerja_mulai)}</td>
-                                <td style="padding: 6px; border: 1px solid black;">${formatTime(out.waktu_kerja_mulai)}</td>
-                                <td style="padding: 6px; border: 1px solid black;">${formatDate(out.waktu_kerja_selesai)}</td>
-                                <td style="padding: 6px; border: 1px solid black;">${formatTime(out.waktu_kerja_selesai)}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Jadwal Padam</td>
-                                <td style="padding: 6px; border: 1px solid black; color: #E31B23;">${formatDate(out.waktu_padam_mulai)}</td>
-                                <td style="padding: 6px; border: 1px solid black; color: #E31B23;">${formatTime(out.waktu_padam_mulai)}</td>
-                                <td style="padding: 6px; border: 1px solid black; color: #E31B23;">${formatDate(out.waktu_padam_selesai)}</td>
-                                <td style="padding: 6px; border: 1px solid black; color: #E31B23;">${formatTime(out.waktu_padam_selesai)}</td>
-                            </tr>
-                        </table>
-
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px;">
-                            <tr>
-                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">Area Terdampak</td>
-                                <td style="padding: 6px; border: 1px solid black;" colspan="3">${out.area_dari} s/d ${out.area_ke}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">Titik Pentahanan</td>
-                                <td style="padding: 6px; border: 1px solid black; width: 25%;">${out.titik_pentahanan || '-'}</td>
-                                <td style="padding: 6px; border: 1px solid black; width: 25%; font-weight: bold;">Komunikasi</td>
-                                <td style="padding: 6px; border: 1px solid black; width: 25%;">${out.komunikasi || '-'}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Kepala Pelaksana</td>
-                                <td style="padding: 6px; border: 1px solid black;">${out.kepala_pelaksana || '-'}</td>
-                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Keterangan Tambahan</td>
-                                <td style="padding: 6px; border: 1px solid black;">${out.keterangan || '-'}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 6px; border: 1px solid black; font-weight: bold;">Rincian Pekerjaan</td>
-                                <td style="padding: 6px; border: 1px solid black;" colspan="3">
-                                    <ul style="margin: 0; padding-left: 15px;">
-                                        ${out.tasks.map(t => `<li>${t}</li>`).join('')}
-                                    </ul>
-                                </td>
-                            </tr>
-                        </table>
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${formatPrintDate(data.request.tanggal_pengajuan)}</td>
+                                    <td>${data.request.departemen}</td>
+                                    <td>${data.request.dipersiapkan_oleh}</td>
+                                    <td>${formatPrintDateRange(out.waktu_kerja_mulai, out.waktu_kerja_selesai)}</td>
+                                    <td>${out.jenis_pemadaman}</td>
+                                    <td>From : ${out.area_dari}<br>To &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${out.area_ke}</td>
+                                    <td>From : ${formatPrintTime(out.waktu_padam_mulai)}<br>To &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${formatPrintTime(out.waktu_padam_selesai)}</td>
+                                    <td>From : ${formatPrintTime(out.waktu_kerja_mulai)}<br>To &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${formatPrintTime(out.waktu_kerja_selesai)}</td>
+                                    <td>${out.kepala_pelaksana || '-'}</td>
+                                </tr>
                     `;
+                });
 
-                    // SIMPAN LAMPIRAN GAMBAR SLD UNTUK DITAMPILKAN DI HALAMAN PALING BELAKANG
+                printHTML += `
+                            </tbody>
+                        </table>
+
+                        <!-- TABLE 2: CONTENTS OF WORK & DETAILS -->
+                        <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: center; margin-bottom: 10px;">
+                            <thead style="background-color: #f0f0f0;">
+                                <tr>
+                                    <th>OUTAGE<br>NO</th>
+                                    <th style="width: 50%;">CONTENTS OF WORK</th>
+                                    <th>EARTH PLACE</th>
+                                    <th>COMMUNICATION TO MCR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                data.outages.forEach((out, index) => {
+                    printHTML += `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td style="text-align: left;">
+                                        <ul style="margin: 0; padding-left: 15px;">
+                                            ${out.tasks.map(t => `<li>${t}</li>`).join('')}
+                                        </ul>
+                                    </td>
+                                    <td>${out.titik_pentahanan || '-'}</td>
+                                    <td>${out.komunikasi || '-'}</td>
+                                </tr>
+                    `;
+                });
+
+                // REMARKS & SIGNATURE BLOCK
+                printHTML += `
+                            </tbody>
+                        </table>
+                        
+                        <div style="font-size: 10px; font-weight: bold; margin-bottom: 5px;">Remark :</div>
+                        <div style="font-size: 10px; margin-bottom: 15px; min-height: 20px;">
+                            ${data.request.remark ? data.request.remark.replace(/\n/g, '<br>') : '-'}
+                        </div>
+
+                        <!-- SIGNATURE TABLE (POP FULL WIDTH) -->
+                        <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: center; page-break-inside: avoid;">
+                            <tr style="background-color: #f0f0f0;">
+                                <td rowspan="5" style="width: 4%;" class="vertical-text"><b>POP</b></td>
+                                <td style="width: 24%;"></td>
+                                <td style="width: 24%; font-weight: bold;">PREPARED</td>
+                                <td style="width: 24%; font-weight: bold;">CHECKED</td>
+                                <td style="width: 24%; font-weight: bold;">APPROVED</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; background-color: #f0f0f0; font-weight: bold;">NAME</td>
+                                <td>MUHAMMAD ALBANI</td>
+                                <td>${namaPemeriksaPDF}</td>
+                                <td>${namaPenyetujuPDF}</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; background-color: #f0f0f0; font-weight: bold;">POSITION</td>
+                                <td>Spesialis</td>
+                                <td>Ka. Seksi</td>
+                                <td>Ka. Dept.</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; background-color: #f0f0f0; font-weight: bold;">DATE</td>
+                                <td>${formatPrintDate(data.request.tanggal_pengajuan)}</td>
+                                <td>${data.request.pemeriksa_date ? formatPrintDate(data.request.pemeriksa_date) : '-'}</td>
+                                <td>${data.request.disetujui_date ? formatPrintDate(data.request.disetujui_date) : '-'}</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; background-color: #f0f0f0; font-weight: bold;">TIME</td>
+                                <td>${formatPrintTime(data.request.tanggal_pengajuan)}</td>
+                                <td>${data.request.pemeriksa_date ? formatPrintTime(data.request.pemeriksa_date) : '-'}</td>
+                                <td>${data.request.disetujui_date ? formatPrintTime(data.request.disetujui_date) : '-'}</td>
+                            </tr>
+                        </table>
+                        <div style="clear: both;"></div>
+                    </div>
+                `;
+
+                // GABUNGKAN GAMBAR SLD DI HALAMAN PALING BELAKANG (Jika ada)
+                let sldAttachmentsHTML = '';
+                data.outages.forEach((out, index) => {
                     if (out.sld_data) {
                         sldAttachmentsHTML += `
                             <div style="page-break-before: always; padding-top: 20px;">
-                                <h2 style="font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid black; padding-bottom: 5px; text-transform: uppercase;">
+                                <h2 style="font-size: 14px; font-family: Arial, sans-serif; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid black; padding-bottom: 5px; text-transform: uppercase;">
                                     LAMPIRAN SLD - PEMADAMAN ${index + 1}
                                 </h2>
                                 <div style="text-align: center;">
@@ -969,39 +1046,8 @@
                         `;
                     }
                 });
-
-                // KOLOM TANDA TANGAN (APPROVAL)
-                printHTML += `
-                        <br>
-                        <table style="width: 100%; margin-top: 30px; font-size: 12px; text-align: center; page-break-inside: avoid;">
-                            <tr>
-                                <td style="width: 33%;">
-                                    <p>Dipersiapkan Oleh,</p>
-                                    <br><br><br>
-                                    <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;">${data.request.dipersiapkan_oleh}</p>
-                                    <p style="margin-top: 2px;">Pemohon</p>
-                                </td>
-                                <td style="width: 33%;">
-                                    <p>Diperiksa Oleh,</p>
-                                    <br><br><br>
-                                    <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;">${namaPemeriksaPDF}</p>
-                                    <p style="margin-top: 2px;">Supervisor/Pemeriksa</p>
-                                </td>
-                                <td style="width: 33%;">
-                                    <p>Disetujui Oleh,</p>
-                                    <br><br><br>
-                                    <p style="text-decoration: underline; font-weight: bold; margin-bottom: 0;">${namaPenyetujuPDF}</p>
-                                    <p style="margin-top: 2px;">Manajer Seksi</p>
-                                </td>
-                            </tr>
-                        </table>
-                `;
-
-                // GABUNGKAN GAMBAR SLD DI HALAMAN PALING BELAKANG
                 printHTML += sldAttachmentsHTML;
-                printHTML += `</div>`; // Tutup div utama pembungkus printHTML
 
-                // Memasukkan template yang sudah dibuat ke dalam kontainer print
                 document.getElementById('printTemplateContainer').innerHTML = printHTML;
 
             } catch(e) {
@@ -1030,11 +1076,7 @@
             let offscreenCtx = offscreenCanvas.getContext('2d');
 
             let activeTool = 'highlight'; 
-            let isDrawing = false;
-            let startX, startY;
-            let currentRect = null;
-            let currentPath = [];
-            let savedAnnotations = [];
+            let isDrawing = false; let startX, startY; let currentRect = null; let currentPath = []; let savedAnnotations = [];
 
             toolBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -1044,7 +1086,6 @@
                     });
                     btn.classList.remove('bg-white', 'text-foreground', 'border-border');
                     btn.classList.add('bg-inalum-blue', 'text-white', 'border-inalum-blue');
-                    
                     activeTool = btn.getAttribute('data-tool');
                     canvas.style.cursor = activeTool === 'text' ? 'text' : 'crosshair';
                 });
@@ -1056,25 +1097,16 @@
 
                 const drawShape = (anno) => {
                     if (anno.type === 'highlight') {
-                        ctx.fillStyle = 'rgba(250, 204, 21, 0.4)';
-                        ctx.strokeStyle = '#eab308';
-                        ctx.lineWidth = 2;
-                        ctx.fillRect(anno.x, anno.y, anno.w, anno.h);
-                        ctx.strokeRect(anno.x, anno.y, anno.w, anno.h);
+                        ctx.fillStyle = 'rgba(250, 204, 21, 0.4)'; ctx.strokeStyle = '#eab308'; ctx.lineWidth = 2;
+                        ctx.fillRect(anno.x, anno.y, anno.w, anno.h); ctx.strokeRect(anno.x, anno.y, anno.w, anno.h);
                     } else if (anno.type === 'draw') {
                         if (!anno.points || anno.points.length === 0) return;
-                        ctx.strokeStyle = '#E31B23';
-                        ctx.lineWidth = 3;
-                        ctx.lineCap = 'round';
-                        ctx.lineJoin = 'round';
-                        ctx.beginPath();
-                        ctx.moveTo(anno.points[0].x, anno.points[0].y);
+                        ctx.strokeStyle = '#E31B23'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                        ctx.beginPath(); ctx.moveTo(anno.points[0].x, anno.points[0].y);
                         for (let i = 1; i < anno.points.length; i++) ctx.lineTo(anno.points[i].x, anno.points[i].y);
                         ctx.stroke();
                     } else if (anno.type === 'text') {
-                        ctx.font = 'bold 16px sans-serif';
-                        ctx.fillStyle = '#E31B23'; 
-                        ctx.textBaseline = 'top';
+                        ctx.font = 'bold 16px sans-serif'; ctx.fillStyle = '#E31B23'; ctx.textBaseline = 'top';
                         ctx.fillText(anno.text, anno.x, anno.y);
                     }
                 };
@@ -1084,9 +1116,7 @@
                 if (activeTool === 'draw' && currentPath.length > 0) drawShape({ type: 'draw', points: currentPath });
             }
 
-            function saveCanvasState() {
-                if (offscreenCanvas.width > 0) hiddenData.value = canvas.toDataURL("image/png");
-            }
+            function saveCanvasState() { if (offscreenCanvas.width > 0) hiddenData.value = canvas.toDataURL("image/png"); }
 
             upload.addEventListener('change', async function(e) {
                 const file = e.target.files[0];
@@ -1106,18 +1136,12 @@
                         const finalScale = scale < 1.5 ? scale : 1.5; 
                         const viewport = page.getViewport({ scale: finalScale });
                         
-                        canvas.width = viewport.width;
-                        canvas.height = viewport.height;
-                        offscreenCanvas.width = viewport.width;
-                        offscreenCanvas.height = viewport.height;
-
+                        canvas.width = viewport.width; canvas.height = viewport.height;
+                        offscreenCanvas.width = viewport.width; offscreenCanvas.height = viewport.height;
                         await page.render({ canvasContext: offscreenCtx, viewport: viewport }).promise;
 
-                        placeholder.classList.add('hidden');
-                        canvas.classList.remove('hidden');
-                        controls.classList.remove('hidden');
-                        wrapper.classList.remove('items-center', 'justify-center');
-
+                        placeholder.classList.add('hidden'); canvas.classList.remove('hidden');
+                        controls.classList.remove('hidden'); wrapper.classList.remove('items-center', 'justify-center');
                         savedAnnotations = []; currentRect = null; currentPath = [];
                         redrawCanvas(); saveCanvasState();
                     } catch (err) {
@@ -1153,24 +1177,20 @@
             canvas.addEventListener('mousemove', (e) => {
                 if (!isDrawing) return;
                 const pos = getPointerPos(e);
-                if (activeTool === 'highlight') {
-                    currentRect = { x: Math.min(startX, pos.x), y: Math.min(startY, pos.y), w: Math.abs(pos.x - startX), h: Math.abs(pos.y - startY) };
-                } else if (activeTool === 'draw') currentPath.push({ x: pos.x, y: pos.y });
+                if (activeTool === 'highlight') currentRect = { x: Math.min(startX, pos.x), y: Math.min(startY, pos.y), w: Math.abs(pos.x - startX), h: Math.abs(pos.y - startY) };
+                else if (activeTool === 'draw') currentPath.push({ x: pos.x, y: pos.y });
                 redrawCanvas();
             });
 
             const finalizeInteraction = () => {
-                if (!isDrawing) return;
-                isDrawing = false;
+                if (!isDrawing) return; isDrawing = false;
                 if (activeTool === 'highlight' && currentRect && currentRect.w > 4 && currentRect.h > 4) savedAnnotations.push({ type: 'highlight', ...currentRect });
                 else if (activeTool === 'draw' && currentPath.length > 1) savedAnnotations.push({ type: 'draw', points: currentPath });
                 currentRect = null; currentPath = [];
                 redrawCanvas(); saveCanvasState();
             };
 
-            canvas.addEventListener('mouseup', finalizeInteraction);
-            canvas.addEventListener('mouseleave', finalizeInteraction);
-
+            canvas.addEventListener('mouseup', finalizeInteraction); canvas.addEventListener('mouseleave', finalizeInteraction);
             canvas.addEventListener('touchstart', (e) => { if(e.touches.length > 1) return; e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive: false});
             canvas.addEventListener('touchmove', (e) => { if(e.touches.length > 1) return; e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive: false});
             canvas.addEventListener('touchend', (e) => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup')); }, {passive: false});
