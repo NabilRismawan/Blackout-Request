@@ -1,4 +1,19 @@
-// --- public/js/app.js ---
+// HELPER ANTI XSS
+function escapeHtml(unsafe) {
+    if (!unsafe) return '-';
+    return String(unsafe)
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
+function safeImg(data) {
+    if (data && typeof data === 'string' && data.startsWith('data:image/')) return data;
+    return ''; // Gagalkan eksekusi jika format sld_data bukan base64 image
+}
+
 let currentRole = 'pemohon';
 let outageCount = 1;
 

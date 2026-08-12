@@ -1,4 +1,18 @@
-// --- public/js/modal.js ---
+// HELPER ANTI XSS
+function escapeHtml(unsafe) {
+    if (!unsafe) return '-';
+    return String(unsafe)
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
+function safeImg(data) {
+    if (data && typeof data === 'string' && data.startsWith('data:image/')) return data;
+    return ''; // Gagalkan eksekusi jika format sld_data bukan base64 image
+}
 
 async function openDetailModal(id) {
     try {
@@ -18,8 +32,14 @@ async function openDetailModal(id) {
             return new Date(dateStr).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
         };
 
-        const namaPemeriksa = data.request.pemeriksa_oleh || '<span class="text-gray-400 italic">Menunggu...</span>';
-        const namaPenyetuju = data.request.disetujui_oleh || '<span class="text-gray-400 italic">Menunggu...</span>';
+        // --- LOGIKA PENCEGAH "MENUNGGU" PADA DOKUMEN FINAL ---
+        const isFinished = data.request.status === 'Disetujui' || data.request.status === 'Approved' || data.request.status === 'Ditolak' || data.request.status === 'Rejected';
+
+        const namaPemeriksa = data.request.pemeriksa_oleh || 
+            (isFinished ? '<span class="text-gray-400">-</span>' : '<span class="text-gray-400 italic">Menunggu...</span>');
+            
+        const namaPenyetuju = data.request.disetujui_oleh || 
+            (isFinished ? '<span class="text-gray-400">-</span>' : '<span class="text-gray-400 italic">Menunggu...</span>');
 
         // --- TAMPILAN MODAL UI (DI WEB) ---
         let contentHTML = `
@@ -116,66 +136,82 @@ async function openDetailModal(id) {
             const d = new Date(dStr);
             return `${String(d.getHours()).padStart(2,'0')} : ${String(d.getMinutes()).padStart(2,'0')}`;
         };
-        const formatPrintDateRange = (mulaiStr, selesaiStr) => {
-            if(!mulaiStr || !selesaiStr) return '-';
-            const m = new Date(mulaiStr); const s = new Date(selesaiStr);
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            if(m.getMonth() === s.getMonth() && m.getFullYear() === s.getFullYear()) {
-                return `${months[m.getMonth()]} ${String(m.getDate()).padStart(2,'0')} ~ ${String(s.getDate()).padStart(2,'0')}, ${m.getFullYear()}`;
-            }
-            return `${formatPrintDate(m)} ~ ${formatPrintDate(s)}`;
-        };
 
         const namaPemeriksaPDF = data.request.pemeriksa_oleh || '-';
         const namaPenyetujuPDF = data.request.disetujui_oleh || '-';
 
         let printHTML = `
+            <style>
+                @media print {
+                    @page {
+                        size: A4 landscape !important;
+                        margin: 1.2cm !important;
+                    }
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .print-table th, .print-table td {
+                        border: 1px solid black;
+                    }
+                }
+            </style>
             <div style="font-family: Arial, sans-serif; color: black; font-size: 10px; width: 100%;">
                 
-                <!-- HEADER KOP -->
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
+                <div style="border: 2px solid black; display: flex; align-items: center; justify-content: space-between; padding: 5px; margin-bottom: 5px; width: 100%;">
+                    <div style="width: 25%; text-align: left;">
+                        <img src="/logo-inalum-login.png" style="height: 35px; object-fit: contain;">
+                    </div>
+                    <div style="width: 50%; text-align: center; font-size: 16px; font-weight: bold; letter-spacing: 1px;">
+                        PT INDONESIA ASAHAN ALUMINIUM
+                    </div>
+                    <div style="width: 25%; text-align: right;">
+                        <table style="border-collapse: collapse; border: 1px solid black; float: right; text-align: center;">
+                            <tr><td style="border: 1px solid black; padding: 2px 5px; font-size: 8px;">No. Dokumen / Revisi</td></tr>
+                            <tr><td style="border: 1px solid black; padding: 2px 5px; font-weight: bold;">POP-FR18-001 / 0</td></tr>
+                        </table>
+                        <div style="clear: both;"></div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <div style="font-size: 14px; font-weight: bold; text-decoration: underline; letter-spacing: 0.5px;">APPROVAL OF OUTAGE WORK</div>
+                </div>
+                
+                <table style="width: 100%; margin-bottom: 15px; font-size: 10px;">
                     <tr>
-                        <td style="width: 33%; vertical-align: top; text-align: left;">
+                        <td style="width: 50%; vertical-align: top; text-align: left;">
                             To &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${data.request.surat_to || '-'}<br>
                             FROM : POP
                         </td>
-                        <td style="width: 34%; text-align: center; vertical-align: top;">
-                            <img src="/logo-inalum-login.png" style="height: 35px; object-fit: contain;">
-                        </td>
-                        <td style="width: 33%; text-align: right; vertical-align: top;">
-                            <table style="border-collapse: collapse; border: 1px solid black; float: right; text-align: center; margin-bottom: 5px;">
-                                <tr><td style="border: 1px solid black; padding: 2px 5px; font-size: 8px;">No. Dokumen / Revisi</td></tr>
-                                <tr><td style="border: 1px solid black; padding: 2px 5px; font-weight: bold;">POP-FR18-001 / 0</td></tr>
-                            </table>
-                            <div style="clear: both;"></div>
+                        <td style="width: 50%; text-align: right; vertical-align: top;">
                             No. : OW/TE/${data.request.id}/${new Date().getFullYear()}<br>
                             DATE OF ISSUED : ${formatPrintDate(new Date())}
                         </td>
                     </tr>
                 </table>
 
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 3px;">PT INDONESIA ASAHAN ALUMINIUM</div>
-                    <div style="font-size: 14px; font-weight: bold; text-decoration: underline;">APPROVAL OF OUTAGE WORK</div>
-                </div>
-
-                <!-- TABLE 1: SUMMARY OF OUTAGE -->
-                <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: center; margin-bottom: 15px;">
+                <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: center; margin-bottom: 15px; border: 1px solid black;">
                     <thead style="background-color: #f0f0f0;">
                         <tr>
-                            <th rowspan="2">OUTAGE<br>NO</th>
-                            <th rowspan="2">REQUEST<br>DATE</th>
-                            <th colspan="2">REQUESTER</th>
-                            <th rowspan="2">WORKING<br>DATE</th>
-                            <th rowspan="2">Kind Of Outage</th>
-                            <th rowspan="2">OUTAGE AREA</th>
-                            <th rowspan="2">OUTAGE TIME</th>
-                            <th rowspan="2">WORKING TIME</th>
-                            <th rowspan="2">WORKING CHIEF</th>
+                            <th rowspan="2" style="padding: 4px;">OUTAGE<br>NO</th>
+                            <th rowspan="2" style="padding: 4px;">REQUEST<br>DATE</th>
+                            <th colspan="2" style="padding: 4px;">REQUESTER</th>
+                            <th colspan="2" style="padding: 4px;">KIND OF OUTAGE</th>
+                            <th rowspan="2" style="padding: 4px;">OUTAGE AREA</th>
+                            <th colspan="2" style="padding: 4px;">OUTAGE TIME</th>
+                            <th colspan="2" style="padding: 4px;">WORKING TIME</th>
+                            <th rowspan="2" style="padding: 4px;">WORKING CHIEF</th>
                         </tr>
                         <tr>
-                            <th>SECT.</th>
-                            <th>P. Incharge</th>
+                            <th style="padding: 4px;">SECT.</th>
+                            <th style="padding: 4px;">P. Incharge</th>
+                            <th style="padding: 4px;">Dari</th>
+                            <th style="padding: 4px;">Sampai</th>
+                            <th style="padding: 4px;">Dari</th>
+                            <th style="padding: 4px;">Sampai</th>
+                            <th style="padding: 4px;">Dari</th>
+                            <th style="padding: 4px;">Sampai</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -184,16 +220,18 @@ async function openDetailModal(id) {
         data.outages.forEach((out, index) => {
             printHTML += `
                         <tr>
-                            <td>${index + 1}</td>
-                            <td>${formatPrintDate(data.request.tanggal_pengajuan)}</td>
-                            <td>${data.request.departemen}</td>
-                            <td>${data.request.dipersiapkan_oleh}</td>
-                            <td>${formatPrintDateRange(out.waktu_kerja_mulai, out.waktu_kerja_selesai)}</td>
-                            <td>${out.jenis_pemadaman}</td>
-                            <td>From : ${out.area_dari}<br>To &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${out.area_ke}</td>
-                            <td>From : ${formatPrintTime(out.waktu_padam_mulai)}<br>To &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${formatPrintTime(out.waktu_padam_selesai)}</td>
-                            <td>From : ${formatPrintTime(out.waktu_kerja_mulai)}<br>To &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${formatPrintTime(out.waktu_kerja_selesai)}</td>
-                            <td>${out.kepala_pelaksana || '-'}</td>
+                            <td style="padding: 4px;">${index + 1}</td>
+                            <td style="padding: 4px;">${formatPrintDate(data.request.tanggal_pengajuan)}</td>
+                            <td style="padding: 4px;">${data.request.departemen}</td>
+                            <td style="padding: 4px;">${data.request.dipersiapkan_oleh}</td>
+                            <td style="padding: 4px;">${formatPrintDate(out.waktu_padam_mulai)}</td>
+                            <td style="padding: 4px;">${formatPrintDate(out.waktu_padam_selesai)}</td>
+                            <td style="padding: 4px;">From : ${out.area_dari}<br>To &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${out.area_ke}</td>
+                            <td style="padding: 4px;">${formatPrintTime(out.waktu_padam_mulai)}</td>
+                            <td style="padding: 4px;">${formatPrintTime(out.waktu_padam_selesai)}</td>
+                            <td style="padding: 4px;">${formatPrintTime(out.waktu_kerja_mulai)}</td>
+                            <td style="padding: 4px;">${formatPrintTime(out.waktu_kerja_selesai)}</td>
+                            <td style="padding: 4px;">${out.kepala_pelaksana || '-'}</td>
                         </tr>
             `;
         });
@@ -202,14 +240,13 @@ async function openDetailModal(id) {
                     </tbody>
                 </table>
 
-                <!-- TABLE 2: CONTENTS OF WORK & DETAILS -->
-                <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: center; margin-bottom: 10px;">
+                <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: center; margin-bottom: 10px; border: 1px solid black;">
                     <thead style="background-color: #f0f0f0;">
                         <tr>
-                            <th>OUTAGE<br>NO</th>
-                            <th style="width: 50%;">CONTENTS OF WORK</th>
-                            <th>EARTH PLACE</th>
-                            <th>COMMUNICATION TO MCR</th>
+                            <th style="padding: 4px; width: 5%;">OUTAGE NO</th>
+                            <th style="padding: 4px; width: 65%;">CONTENTS OF WORK</th>
+                            <th style="padding: 4px; width: 15%;">EARTH PLACE</th>
+                            <th style="padding: 4px; width: 15%;">COMMUNICATION TO MCR</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -218,14 +255,14 @@ async function openDetailModal(id) {
         data.outages.forEach((out, index) => {
             printHTML += `
                         <tr>
-                            <td>${index + 1}</td>
-                            <td style="text-align: left;">
+                            <td style="padding: 4px;">${index + 1}</td>
+                            <td style="padding: 4px; text-align: left;">
                                 <ul style="margin: 0; padding-left: 15px;">
                                     ${out.tasks.map(t => `<li>${t}</li>`).join('')}
                                 </ul>
                             </td>
-                            <td>${out.titik_pentahanan || '-'}</td>
-                            <td>${out.komunikasi || '-'}</td>
+                            <td style="padding: 4px;">${out.titik_pentahanan || '-'}</td>
+                            <td style="padding: 4px;">${out.komunikasi || '-'}</td>
                         </tr>
             `;
         });
@@ -235,50 +272,43 @@ async function openDetailModal(id) {
                     </tbody>
                 </table>
                 
-                <div style="font-size: 10px; font-weight: bold; margin-bottom: 5px;">Remark :</div>
-                <div style="font-size: 10px; margin-bottom: 15px; min-height: 20px;">
+                <div style="font-size: 10px; font-weight: bold; margin-bottom: 2px;">Remark :</div>
+                <div style="font-size: 10px; margin-bottom: 10px; min-height: 20px;">
                     ${data.request.remark ? data.request.remark.replace(/\n/g, '<br>') : '-'}
                 </div>
 
-                <!-- SIGNATURE TABLE (POP) -->
-                <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: center; page-break-inside: avoid;">
+                <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: center; page-break-inside: avoid; border: 1px solid black; margin-top: 10px;">
                     <tr style="background-color: #f0f0f0;">
-                        <td rowspan="5" style="width: 4%;" class="vertical-text"><b>POP</b></td>
-                        <td style="width: 24%;"></td>
-                        <td style="width: 24%; font-weight: bold;">PREPARED</td>
-                        <td style="width: 24%; font-weight: bold;">CHECKED</td>
-                        <td style="width: 24%; font-weight: bold;">APPROVED</td>
+                        <td rowspan="4" style="width: 5%; border: 1px solid black; writing-mode: vertical-rl; transform: rotate(180deg); padding: 5px;"><b>POP</b></td>
+                        <td style="width: 25%; border: 1px solid black;"></td>
+                        <td style="width: 20%; font-weight: bold; border: 1px solid black; padding: 4px;">PREPARED</td>
+                        <td style="width: 25%; font-weight: bold; border: 1px solid black; padding: 4px;">CHECKED</td>
+                        <td style="width: 25%; font-weight: bold; border: 1px solid black; padding: 4px;">APPROVED</td>
                     </tr>
                     <tr>
-                        <td style="text-align: left; background-color: #f0f0f0; font-weight: bold;">NAME</td>
-                        <td>MUHAMMAD ALBANI</td>
-                        <td>${namaPemeriksaPDF}</td>
-                        <td>${namaPenyetujuPDF}</td>
+                        <td style="text-align: left; background-color: #f0f0f0; font-weight: bold; border: 1px solid black; padding: 4px;">NAME</td>
+                        <td style="border: 1px solid black; padding: 4px;">MUHAMMAD ALBANI</td>
+                        <td style="border: 1px solid black; padding: 4px;">${namaPemeriksaPDF}</td>
+                        <td style="border: 1px solid black; padding: 4px;">${namaPenyetujuPDF}</td>
                     </tr>
                     <tr>
-                        <td style="text-align: left; background-color: #f0f0f0; font-weight: bold;">POSITION</td>
-                        <td>Spesialis</td>
-                        <td>Ka. Seksi</td>
-                        <td>Ka. Dept.</td>
+                        <td style="text-align: left; background-color: #f0f0f0; font-weight: bold; border: 1px solid black; padding: 4px;">DATE</td>
+                        <td style="border: 1px solid black; padding: 4px;">${formatPrintDate(data.request.tanggal_pengajuan)}</td>
+                        <td style="border: 1px solid black; padding: 4px;">${data.request.pemeriksa_date ? formatPrintDate(data.request.pemeriksa_date) : '-'}</td>
+                        <td style="border: 1px solid black; padding: 4px;">${data.request.disetujui_date ? formatPrintDate(data.request.disetujui_date) : '-'}</td>
                     </tr>
                     <tr>
-                        <td style="text-align: left; background-color: #f0f0f0; font-weight: bold;">DATE</td>
-                        <td>${formatPrintDate(data.request.tanggal_pengajuan)}</td>
-                        <td>${data.request.pemeriksa_date ? formatPrintDate(data.request.pemeriksa_date) : '-'}</td>
-                        <td>${data.request.disetujui_date ? formatPrintDate(data.request.disetujui_date) : '-'}</td>
-                    </tr>
-                    <tr>
-                        <td style="text-align: left; background-color: #f0f0f0; font-weight: bold;">TIME</td>
-                        <td>${formatPrintTime(data.request.tanggal_pengajuan)}</td>
-                        <td>${data.request.pemeriksa_date ? formatPrintTime(data.request.pemeriksa_date) : '-'}</td>
-                        <td>${data.request.disetujui_date ? formatPrintTime(data.request.disetujui_date) : '-'}</td>
+                        <td style="text-align: left; background-color: #f0f0f0; font-weight: bold; border: 1px solid black; padding: 4px;">TIME</td>
+                        <td style="border: 1px solid black; padding: 4px;">${formatPrintTime(data.request.tanggal_pengajuan)}</td>
+                        <td style="border: 1px solid black; padding: 4px;">${data.request.pemeriksa_date ? formatPrintTime(data.request.pemeriksa_date) : '-'}</td>
+                        <td style="border: 1px solid black; padding: 4px;">${data.request.disetujui_date ? formatPrintTime(data.request.disetujui_date) : '-'}</td>
                     </tr>
                 </table>
                 <div style="clear: both;"></div>
             </div>
         `;
 
-        // GABUNGKAN GAMBAR SLD
+        // GABUNGKAN GAMBAR SLD (BERADA DI HALAMAN PALING BELAKANG)
         let sldAttachmentsHTML = '';
         data.outages.forEach((out, index) => {
             if (out.sld_data) {
@@ -288,7 +318,7 @@ async function openDetailModal(id) {
                             LAMPIRAN SLD - PEMADAMAN ${index + 1}
                         </h2>
                         <div style="text-align: center;">
-                            <img src="${out.sld_data}" style="max-width: 100%; max-height: 24cm; border: 1px solid #ccc;">
+                            <img src="${out.sld_data}" style="max-width: 100%; max-height: 18cm; border: 1px solid #ccc;">
                         </div>
                     </div>
                 `;
@@ -299,6 +329,7 @@ async function openDetailModal(id) {
         document.getElementById('printTemplateContainer').innerHTML = printHTML;
 
     } catch(e) {
+        console.error(e);
         alert('Gagal memuat detail permohonan dari database.');
     }
 }
